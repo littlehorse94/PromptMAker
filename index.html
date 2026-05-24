@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Prompt Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #6366f1;
+  --accent2: #8b5cf6;
+  --accent3: #06b6d4;
+  --bg: #07080d;
+  --s1: #0f1117;
+  --s2: #161923;
+  --s3: #1e2231;
+  --border: #252836;
+  --border2: #2f3347;
+  --text: #f0f1f8;
+  --muted: #7b7f9a;
+  --muted2: #4f5368;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── NOISE OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* ── GLOW ORBS ── */
+.orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);top:-200px;right:-100px}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,.1),transparent 70%);bottom:-200px;left:-100px}
+
+/* ── PROGRESS ── */
+#progress-bar{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--s1);border-bottom:1px solid var(--border)}
+.prog-inner{max-width:900px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;gap:16px}
+.step-dots{display:flex;gap:8px;align-items:center;flex:1}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:all .4s ease;cursor:default}
+.dot.done{background:var(--accent);box-shadow:0 0 10px rgba(99,102,241,.5)}
+.dot.active{background:white;width:24px;border-radius:4px;box-shadow:0 0 14px rgba(255,255,255,.3)}
+.step-label{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.prog-line{flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:1px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ── STEPS CONTAINER ── */
+#steps{position:relative;padding-top:80px;min-height:100vh}
+.step{display:none;position:relative;z-index:1;padding:60px 24px 120px;max-width:900px;margin:0 auto;animation:fadeUp .5s ease forwards}
+.step.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TYPOGRAPHY ── */
+.step-eyebrow{font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.step-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,5vw,42px);font-weight:700;line-height:1.15;margin-bottom:10px}
+.step-title span{background:linear-gradient(135deg,#fff 30%,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.step-sub{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:40px;max-width:560px}
+
+/* ── CARDS ── */
+.card-grid{display:grid;gap:14px}
+.card-grid.cols2{grid-template-columns:repeat(2,1fr)}
+.card-grid.cols3{grid-template-columns:repeat(3,1fr)}
+.card-grid.cols4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:640px){.card-grid.cols2,.card-grid.cols3,.card-grid.cols4{grid-template-columns:1fr}}
+@media(max-width:768px){.card-grid.cols3,.card-grid.cols4{grid-template-columns:repeat(2,1fr)}}
+
+.sel-card{background:var(--s1);border:1.5px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden;user-select:none}
+.sel-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(99,102,241,.05),transparent);opacity:0;transition:opacity .25s}
+.sel-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.sel-card:hover::before{opacity:1}
+.sel-card.selected{border-color:var(--accent);background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(139,92,246,.05));box-shadow:0 0 0 1px rgba(99,102,241,.3),0 8px 30px rgba(99,102,241,.15)}
+.sel-card.selected::before{opacity:1}
+.card-check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:10px}
+.sel-card.selected .card-check{background:var(--accent);border-color:var(--accent);color:white}
+.card-icon{font-size:28px;margin-bottom:12px;line-height:1}
+.card-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-bottom:4px}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── FORM INPUTS ── */
+.field-group{margin-bottom:24px}
+.field-label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:8px;letter-spacing:.02em}
+.field-label span{color:var(--accent)}
+.field-input,.field-textarea,.field-select{width:100%;background:var(--s1);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;resize:vertical}
+.field-input:focus,.field-textarea:focus,.field-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.field-textarea{min-height:100px}
+.field-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b7f9a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+
+/* ── FILE UPLOAD ── */
+.upload-zone{border:2px dashed var(--border2);border-radius:14px;padding:32px;text-align:center;cursor:pointer;transition:all .25s;background:var(--s1)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05)}
+.upload-icon{font-size:36px;margin-bottom:12px;display:block}
+.upload-title{font-weight:600;font-size:15px;margin-bottom:6px}
+.upload-sub{font-size:13px;color:var(--muted)}
+.upload-sub b{color:var(--accent);cursor:pointer}
+#file-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.file-chip{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px}
+.file-chip-icon{font-size:16px}
+.file-chip-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-chip-remove{cursor:pointer;color:var(--muted);transition:color .2s;font-size:14px;line-height:1}
+.file-chip-remove:hover{color:#ef4444}
+
+/* ── LAYOUT PREVIEWS ── */
+.layout-card{background:var(--s1);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:all .25s;user-select:none}
+.layout-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.layout-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px rgba(99,102,241,.3),0 8px 30px rgba(99,102,241,.15)}
+.layout-preview{width:100%;aspect-ratio:16/10;background:var(--s2);border-radius:8px;overflow:hidden;margin-bottom:12px;position:relative}
+.layout-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;margin-bottom:3px}
+.layout-hint{font-size:11px;color:var(--muted)}
+
+/* ── MINI LAYOUT CSS MOCKUPS ── */
+/* Minimal */
+.lp-minimal .lp-nav{height:8px;background:linear-gradient(90deg,rgba(99,102,241,.8) 0%,rgba(99,102,241,.8) 40%,transparent 40%);margin:10px;border-radius:2px}
+.lp-minimal .lp-hero{height:50px;margin:0 10px;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));border-radius:4px;display:flex;align-items:center;justify-content:center}
+.lp-minimal .lp-hero-text{width:60%;height:8px;background:rgba(255,255,255,.15);border-radius:2px}
+.lp-minimal .lp-subs{display:flex;gap:4px;margin:8px 10px}
+.lp-minimal .lp-sub{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:1px}
+.lp-minimal .lp-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:6px 10px}
+.lp-minimal .lp-card{height:18px;background:rgba(255,255,255,.04);border-radius:3px;border:1px solid rgba(255,255,255,.06)}
+
+/* Bold Hero */
+.lp-bold .lp-fullhero{height:70px;background:linear-gradient(135deg,rgba(99,102,241,.4),rgba(6,182,212,.2));position:relative;overflow:hidden}
+.lp-bold .lp-fullhero::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent)}
+.lp-bold .lp-hero-content{position:absolute;bottom:8px;left:10px;right:10px}
+.lp-bold .lp-h1{height:10px;width:70%;background:rgba(255,255,255,.7);border-radius:2px;margin-bottom:4px}
+.lp-bold .lp-h2{height:6px;width:45%;background:rgba(255,255,255,.3);border-radius:2px;margin-bottom:6px}
+.lp-bold .lp-btn{height:10px;width:25%;background:var(--accent);border-radius:2px;opacity:.8}
+.lp-bold .lp-row{display:flex;gap:4px;margin:8px 10px;height:16px}
+.lp-bold .lp-col{flex:1;background:rgba(255,255,255,.04);border-radius:3px}
+
+/* Cards */
+.lp-cards-lay .lp-topbar{height:8px;margin:8px;background:rgba(255,255,255,.08);border-radius:2px}
+.lp-cards-lay .lp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:4px 8px}
+.lp-cards-lay .lp-gcard{background:rgba(255,255,255,.05);border-radius:4px;border:1px solid rgba(255,255,255,.08);padding:4px}
+.lp-cards-lay .lp-gcard-img{height:18px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(139,92,246,.2));border-radius:2px;margin-bottom:3px}
+.lp-cards-lay .lp-gcard-line{height:4px;background:rgba(255,255,255,.1);border-radius:1px;margin-bottom:2px}
+.lp-cards-lay .lp-gcard-line.short{width:60%}
+
+/* Split */
+.lp-split .lp-split-inner{display:flex;height:100%}
+.lp-split .lp-left{width:50%;background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.15));display:flex;flex-direction:column;justify-content:center;padding:10px}
+.lp-split .lp-right{flex:1;padding:10px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.lp-split .lp-left-t{height:8px;background:rgba(255,255,255,.5);border-radius:2px;margin-bottom:5px}
+.lp-split .lp-left-s{height:5px;background:rgba(255,255,255,.2);border-radius:2px;margin-bottom:3px}
+.lp-split .lp-right-card{height:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:3px}
+
+/* Magazine */
+.lp-magazine .lp-mag-header{height:10px;background:rgba(255,255,255,.1);margin:8px 8px 5px;border-radius:2px}
+.lp-magazine .lp-mag-main{display:grid;grid-template-columns:2fr 1fr;gap:4px;margin:0 8px}
+.lp-magazine .lp-mag-hero-col{display:flex;flex-direction:column;gap:3px}
+.lp-magazine .lp-mag-big{height:45px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(6,182,212,.2));border-radius:3px}
+.lp-magazine .lp-mag-row{display:flex;gap:3px}
+.lp-magazine .lp-mag-sm{flex:1;height:20px;background:rgba(255,255,255,.05);border-radius:3px}
+.lp-magazine .lp-mag-side{display:flex;flex-direction:column;gap:3px}
+.lp-magazine .lp-mag-sitem{height:18px;background:rgba(255,255,255,.05);border-radius:3px;border-left:2px solid rgba(99,102,241,.5)}
+
+/* Asymmetric */
+.lp-asym .lp-as-top{display:flex;gap:4px;margin:8px;height:40px}
+.lp-asym .lp-as-big{flex:2;background:linear-gradient(135deg,rgba(99,102,241,.4),rgba(139,92,246,.2));border-radius:5px}
+.lp-asym .lp-as-small{flex:1;display:flex;flex-direction:column;gap:3px}
+.lp-asym .lp-as-sm{flex:1;background:rgba(255,255,255,.05);border-radius:3px}
+.lp-asym .lp-as-bot{display:flex;gap:4px;margin:4px 8px;height:28px}
+.lp-asym .lp-as-b1{flex:1;background:rgba(255,255,255,.05);border-radius:3px;margin-left:20%}
+.lp-asym .lp-as-b2{flex:2;background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(99,102,241,.15));border-radius:3px}
+
+/* Animations on hover */
+.layout-card:hover .lp-minimal .lp-hero-text,
+.layout-card.selected .lp-minimal .lp-hero-text{animation:shimmer 2s infinite}
+@keyframes shimmer{0%,100%{opacity:.3}50%{opacity:1}}
+.layout-card:hover .lp-bold .lp-fullhero::after,
+.layout-card.selected .lp-bold .lp-fullhero::after{animation:darkPulse 2s infinite}
+@keyframes darkPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── PALETTE ── */
+.palette-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.palette-card{border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .25s;background:var(--s1)}
+.palette-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.palette-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px rgba(99,102,241,.3)}
+.palette-swatches{display:flex;gap:3px;margin-bottom:10px;border-radius:6px;overflow:hidden;height:28px}
+.swatch{flex:1;transition:flex .3s}
+.palette-card:hover .swatch:first-child,.palette-card.selected .swatch:first-child{flex:2}
+.palette-name{font-size:12px;font-weight:600;margin-bottom:2px}
+.palette-vibe{font-size:11px;color:var(--muted)}
+
+/* ── COLOR CUSTOM ── */
+.color-row{display:flex;gap:16px;flex-wrap:wrap}
+.color-field{display:flex;flex-direction:column;align-items:center;gap:8px}
+.color-field label{font-size:12px;color:var(--muted)}
+.color-field input[type=color]{width:56px;height:56px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:4px}
+.color-field input[type=color]::-webkit-color-swatch-wrapper{padding:0;border-radius:6px}
+.color-field input[type=color]::-webkit-color-swatch{border:none;border-radius:6px}
+
+/* ── FONT CARDS ── */
+.font-card{background:var(--s1);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .25s}
+.font-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.font-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px rgba(99,102,241,.3),0 8px 30px rgba(99,102,241,.12)}
+.font-sample{font-size:22px;font-weight:700;margin-bottom:6px;color:white}
+.font-meta{font-size:11px;color:var(--muted);font-family:'Inter',sans-serif}
+
+/* ── PAGE SELECTOR ── */
+.pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.page-chip{border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;background:var(--s1);display:flex;align-items:center;gap:10px}
+.page-chip:hover{border-color:var(--border2)}
+.page-chip.selected{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.page-chip-icon{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.page-chip-name{font-size:13px;font-weight:500}
+.page-chip.locked{opacity:.6;cursor:default;border-color:var(--border2)}
+.page-chip.locked .page-chip-name::after{content:' (auto)';font-size:10px;color:var(--accent)}
+
+/* ── SECTION CHIP (for one-pager) ── */
+.section-chip{border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .2s;background:var(--s1);display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.section-chip:hover{border-color:var(--border2)}
+.section-chip.selected{border-color:var(--accent);background:rgba(99,102,241,.08)}
+.section-chip-icon{font-size:16px;width:24px;text-align:center}
+
+/* ── COUNT SELECTOR ── */
+.count-row{display:flex;gap:10px;flex-wrap:wrap}
+.count-btn{width:56px;height:56px;border:1.5px solid var(--border);border-radius:12px;background:var(--s1);color:var(--text);font-size:16px;font-weight:600;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif}
+.count-btn:hover{border-color:var(--border2)}
+.count-btn.selected{border-color:var(--accent);background:rgba(99,102,241,.12);color:white;box-shadow:0 0 20px rgba(99,102,241,.2)}
+.count-btn.custom-count{width:auto;padding:0 16px;font-size:13px}
+
+/* ── SEO CARDS ── */
+.seo-card{background:var(--s1);border:1.5px solid var(--border);border-radius:16px;padding:24px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.seo-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0;opacity:0;transition:opacity .25s}
+.seo-card.full::after{background:linear-gradient(90deg,#10b981,#06b6d4);opacity:1}
+.seo-card.half::after{background:linear-gradient(90deg,#f59e0b,#f97316);opacity:1}
+.seo-card.none::after{background:linear-gradient(90deg,#6b7280,#9ca3af);opacity:1}
+.seo-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.seo-card.selected.full{border-color:#10b981;box-shadow:0 0 0 1px rgba(16,185,129,.3),0 8px 30px rgba(16,185,129,.1)}
+.seo-card.selected.half{border-color:#f59e0b;box-shadow:0 0 0 1px rgba(245,158,11,.3),0 8px 30px rgba(245,158,11,.1)}
+.seo-card.selected.none{border-color:#6b7280;box-shadow:0 0 0 1px rgba(107,114,128,.3)}
+.seo-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+.seo-badge.full{background:rgba(16,185,129,.15);color:#10b981}
+.seo-badge.half{background:rgba(245,158,11,.15);color:#f59e0b}
+.seo-badge.none{background:rgba(107,114,128,.15);color:#9ca3af}
+.seo-card h3{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px}
+.seo-card p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.seo-features{list-style:none}
+.seo-features li{font-size:12px;color:var(--muted);padding:4px 0;display:flex;gap:8px;align-items:flex-start}
+.seo-features li::before{content:'•';color:var(--muted2);flex-shrink:0}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--s1);border:1.5px solid var(--border);border-radius:12px;margin-bottom:10px}
+.toggle-info{flex:1}
+.toggle-title{font-size:14px;font-weight:500;margin-bottom:3px}
+.toggle-desc{font-size:12px;color:var(--muted)}
+.toggle-switch{position:relative;width:44px;height:24px;cursor:pointer;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:12px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+.toggle-switch input:checked+.toggle-slider{background:var(--accent)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px)}
+
+/* ── LANGUAGE CHIPS ── */
+.lang-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.lang-chip{padding:6px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;background:var(--s1)}
+.lang-chip:hover{border-color:var(--border2)}
+.lang-chip.selected{border-color:var(--accent);background:rgba(99,102,241,.1);color:white}
+
+/* ── NAVIGATION BUTTONS ── */
+#nav-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:linear-gradient(to top,var(--bg) 70%,transparent);padding:20px 24px 28px;display:flex;justify-content:center}
+.nav-inner{max-width:900px;width:100%;display:flex;justify-content:space-between;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .25s;border:none;font-family:inherit;letter-spacing:.01em}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 4px 20px rgba(99,102,241,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(99,102,241,.4)}
+.btn-primary:active{transform:none}
+.btn:disabled{opacity:.4;cursor:default;transform:none!important}
+
+/* ── FLOATING SUMMARY WIDGET ── */
+#summary-widget{position:fixed;bottom:90px;right:24px;z-index:200;display:none}
+.sw-toggle{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.4);transition:all .25s;font-size:20px}
+.sw-toggle:hover{transform:scale(1.08);box-shadow:0 8px 30px rgba(99,102,241,.5)}
+.sw-badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;background:#ef4444;border-radius:10px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);padding:0 4px;color:white;animation:pop .3s ease}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.sw-panel{position:absolute;bottom:60px;right:0;width:280px;background:var(--s2);border:1px solid var(--border2);border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none;animation:panelIn .2s ease}
+@keyframes panelIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.sw-panel.open{display:block}
+.sw-panel h4{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:white}
+.sw-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.sw-row:last-child{border-bottom:none}
+.sw-key{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.sw-val{font-size:11px;color:var(--text);text-align:right;font-weight:500}
+
+/* ── GENERATE SECTION ── */
+.gen-summary{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px}
+.gen-summary h3{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px}
+.gen-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:540px){.gen-summary-grid{grid-template-columns:1fr}}
+.gen-item{background:var(--s2);border-radius:10px;padding:12px}
+.gen-item-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.gen-item-val{font-size:13px;font-weight:500}
+.coffee-hint{background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(249,115,22,.05));border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:16px 20px;display:flex;gap:14px;align-items:flex-start;margin-bottom:24px}
+.coffee-emoji{font-size:28px;flex-shrink:0;animation:steam 3s ease-in-out infinite}
+@keyframes steam{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-5px) rotate(5deg)}}
+.coffee-text{font-size:13px;color:var(--muted);line-height:1.6}
+.coffee-text b{color:#fbbf24}
+#prompt-output{width:100%;min-height:280px;background:var(--s1);border:1.5px solid var(--border);border-radius:14px;padding:20px;color:var(--text);font-family:'Inter',monospace;font-size:12.5px;line-height:1.7;resize:vertical;outline:none;transition:border-color .2s;margin-bottom:16px}
+#prompt-output:focus{border-color:var(--accent)}
+#prompt-output.empty{color:var(--muted2);font-style:italic}
+.gen-actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn-generate{background:linear-gradient(135deg,#10b981,#06b6d4);box-shadow:0 4px 20px rgba(16,185,129,.3);color:white;padding:14px 28px;font-size:15px}
+.btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(16,185,129,.4)}
+.btn-copy{background:var(--s2);border:1.5px solid var(--border);color:var(--text)}
+.btn-copy:hover{border-color:var(--border2)}
+.btn-copy:disabled{opacity:.3}
+.generating{display:none}
+.generating.show{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.dot-spin{display:flex;gap:4px}
+.dot-spin span{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:bounce .8s infinite}
+.dot-spin span:nth-child(2){animation-delay:.15s}
+.dot-spin span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* ── MISC ── */
+.section-divider{height:1px;background:var(--border);margin:32px 0}
+.tip-box{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+.tip-box b{color:var(--accent)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(99,102,241,.12);color:var(--accent);margin-bottom:8px}
+.conditional{display:none}
+.conditional.show{display:block}
+.anim-preview{width:100%;height:80px;border-radius:10px;overflow:hidden;position:relative;background:var(--s2);margin-bottom:10px}
+/* static preview */
+.ap-static{display:flex;align-items:center;justify-content:center;gap:8px;height:100%}
+.ap-static .ap-block{width:40px;height:30px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:4px}
+/* half animation preview */
+.ap-half .ap-element{position:absolute;border-radius:4px}
+.ap-half .e1{width:60%;height:10px;background:rgba(99,102,241,.4);top:20px;left:10%;animation:slideInLeft 2s ease-in-out infinite}
+.ap-half .e2{width:40%;height:10px;background:rgba(139,92,246,.3);top:40px;left:10%;animation:slideInLeft 2s ease-in-out infinite .3s}
+.ap-half .e3{width:50px;height:20px;background:rgba(6,182,212,.25);top:15px;right:15%;border-radius:6px;animation:fadeInRight 2s ease-in-out infinite .6s}
+@keyframes slideInLeft{0%,100%{transform:translateX(-30px);opacity:0}30%,70%{transform:translateX(0);opacity:1}}
+@keyframes fadeInRight{0%,100%{transform:translateX(30px);opacity:0}30%,70%{transform:translateX(0);opacity:1}}
+/* full animation preview */
+.ap-full{overflow:hidden}
+.ap-full .ap-bg{position:absolute;inset:0;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(6,182,212,.2));animation:hueShift 4s linear infinite}
+.ap-full .ap-particle{position:absolute;border-radius:50%;animation:float 3s ease-in-out infinite}
+.ap-full .p1{width:8px;height:8px;background:rgba(99,102,241,.6);top:20%;left:20%;animation-delay:.5s}
+.ap-full .p2{width:5px;height:5px;background:rgba(6,182,212,.6);top:60%;left:50%;animation-delay:1s}
+.ap-full .p3{width:6px;height:6px;background:rgba(139,92,246,.6);top:30%;right:20%;animation-delay:1.5s}
+.ap-full .ap-line{position:absolute;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);width:60%;top:50%;left:20%;animation:scanline 2s linear infinite}
+@keyframes hueShift{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.1)}}
+@keyframes scanline{0%{transform:scaleX(0) translateX(-100%)}100%{transform:scaleX(1) translateX(100%)}}
+
+.input-hidden{display:none}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar">
+  <div class="prog-inner">
+    <div class="step-dots" id="step-dots"></div>
+    <div class="prog-line"><div class="prog-fill" id="prog-fill" style="width:16.6%"></div></div>
+    <div class="step-label" id="step-label">Step 1 of 6</div>
+  </div>
+</div>
+
+<!-- STEPS -->
+<div id="steps">
+
+  <!-- ══ STEP 1: FOUNDATION ══ -->
+  <div class="step active" id="step-1">
+    <div class="step-eyebrow">Let's get started</div>
+    <h1 class="step-title">What kind of website<br>are you <span>building?</span></h1>
+    <p class="step-sub">I'll ask you a few questions, then craft a complete, ready-to-use prompt for building your website — tailored to your business and vision.</p>
+
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Website structure</h2>
+    <div class="card-grid cols2" style="margin-bottom:32px">
+      <div class="sel-card" data-field="siteType" data-value="one-pager" onclick="selectCard(this,'siteType','one-pager')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">📄</div>
+        <div class="card-title">One-Pager</div>
+        <div class="card-desc">All content on a single scrollable page. Clean, focused and fast to build. Great for portfolios, products and landing campaigns.</div>
+      </div>
+      <div class="sel-card" data-field="siteType" data-value="multi-pager" onclick="selectCard(this,'siteType','multi-pager')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🗂️</div>
+        <div class="card-title">Multi-Pager</div>
+        <div class="card-desc">Multiple separate pages with navigation. Better for businesses that need depth — services, blog, shop, team pages and more.</div>
+      </div>
+    </div>
+
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Primary purpose</h2>
+    <div class="card-grid cols4">
+      <div class="sel-card" data-field="purpose" data-value="services" onclick="selectCard(this,'purpose','services')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🛠️</div>
+        <div class="card-title">Services</div>
+        <div class="card-desc">Agencies, consultants, freelancers, professionals</div>
+      </div>
+      <div class="sel-card" data-field="purpose" data-value="products" onclick="selectCard(this,'purpose','products')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🛒</div>
+        <div class="card-title">Products</div>
+        <div class="card-desc">E-commerce, SaaS, physical or digital goods</div>
+      </div>
+      <div class="sel-card" data-field="purpose" data-value="portfolio" onclick="selectCard(this,'purpose','portfolio')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🎨</div>
+        <div class="card-title">Portfolio</div>
+        <div class="card-desc">Creatives, designers, developers, artists</div>
+      </div>
+      <div class="sel-card" data-field="purpose" data-value="other" onclick="selectCard(this,'purpose','other')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">✨</div>
+        <div class="card-title">Other</div>
+        <div class="card-desc">Non-profit, community, events, personal brand</div>
+      </div>
+    </div>
+
+    <div id="purpose-other-field" class="conditional" style="margin-top:16px">
+      <div class="field-group" style="margin-bottom:0">
+        <label class="field-label">Tell us more about your purpose</label>
+        <input class="field-input" type="text" placeholder="e.g. Non-profit animal shelter, Community event hub..." oninput="state.purposeCustom=this.value">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 2: BUSINESS INFO ══ -->
+  <div class="step" id="step-2">
+    <div class="step-eyebrow">About your business</div>
+    <h1 class="step-title">Tell me about<br><span>your brand</span></h1>
+    <p class="step-sub">The more detail you share, the more unique and targeted your website prompt will be. Upload any assets to give me extra context.</p>
+
+    <!-- File Upload -->
+    <div style="margin-bottom:32px">
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:6px">Upload your brand assets <span style="font-size:12px;color:var(--muted);font-weight:400">(Optional but strongly recommended)</span></h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Uploading your logo, pitch deck, or brand guide helps me design something truly unique to you.</p>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <span class="upload-icon">📁</span>
+        <div class="upload-title">Drop files here</div>
+        <div class="upload-sub">or <b onclick="event.stopPropagation();document.getElementById('file-input').click()">browse to upload</b></div>
+        <div class="upload-sub" style="margin-top:6px;font-size:11px">PNG, JPG, PDF, PPT, DOCX · max 20 MB each</div>
+      </div>
+      <input type="file" id="file-input" class="input-hidden" multiple accept=".png,.jpg,.jpeg,.gif,.svg,.pdf,.ppt,.pptx,.doc,.docx" onchange="handleFileInput(this)">
+      <div id="file-list"></div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="field-label">Company / Brand Name <span>*</span></label>
+        <input class="field-input" type="text" placeholder="e.g. Luminary Studio" oninput="state.companyName=this.value;updateSummary()">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Industry / Niche <span>*</span></label>
+        <input class="field-input" type="text" placeholder="e.g. Digital Marketing Agency" oninput="state.industry=this.value;updateSummary()">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Who is your target audience? <span>*</span></label>
+      <input class="field-input" type="text" placeholder="e.g. SME owners aged 30-50 looking to grow their online presence" oninput="state.targetAudience=this.value">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">What makes you unique? (USP) <span>*</span></label>
+      <textarea class="field-textarea" placeholder="e.g. We combine AI-powered tools with human creativity to deliver results 3x faster than traditional agencies..." oninput="state.usp=this.value" style="min-height:80px"></textarea>
+    </div>
+
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="field-label">Main tagline or key message</label>
+        <input class="field-input" type="text" placeholder="e.g. Where Ideas Become Icons" oninput="state.tagline=this.value">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Top 1–3 competitors (URLs or names)</label>
+        <input class="field-input" type="text" placeholder="e.g. hubspot.com, mailchimp.com" oninput="state.competitors=this.value">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Tone of voice</label>
+      <div class="card-grid cols4" style="margin-top:4px">
+        <div class="sel-card" style="padding:14px" data-field="tone" data-value="professional" onclick="selectCard(this,'tone','professional')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:20px;margin-bottom:6px">💼</div>
+          <div class="card-title" style="font-size:13px">Professional</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="tone" data-value="friendly" onclick="selectCard(this,'tone','friendly')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:20px;margin-bottom:6px">😊</div>
+          <div class="card-title" style="font-size:13px">Friendly</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="tone" data-value="playful" onclick="selectCard(this,'tone','playful')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:20px;margin-bottom:6px">🎉</div>
+          <div class="card-title" style="font-size:13px">Playful</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="tone" data-value="luxury" onclick="selectCard(this,'tone','luxury')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:20px;margin-bottom:6px">💎</div>
+          <div class="card-title" style="font-size:13px">Luxury</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Must-have features or sections</label>
+      <input class="field-input" type="text" placeholder="e.g. live chat, video testimonials, booking calendar, before/after gallery" oninput="state.mustHave=this.value">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Anything else we should know?</label>
+      <textarea class="field-textarea" placeholder="Competitor notes, inspirational websites, things you don't want, accessibility requirements..." oninput="state.additionalNotes=this.value"></textarea>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: DESIGN ══ -->
+  <div class="step" id="step-3">
+    <div class="step-eyebrow">Design & Theme</div>
+    <h1 class="step-title">Make it<br><span>look amazing</span></h1>
+    <p class="step-sub">Define the visual direction for your website. Hover over layouts to see how they look.</p>
+
+    <!-- Layout -->
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Layout style</h2>
+    <div class="card-grid cols3" style="margin-bottom:32px" id="layout-grid">
+      <!-- Minimal -->
+      <div class="layout-card" data-field="layout" data-value="minimal" onclick="selectLayout(this,'minimal')">
+        <div class="layout-preview"><div class="lp-minimal" style="height:100%;padding:8px;display:flex;flex-direction:column;gap:5px">
+          <div class="lp-nav"></div><div class="lp-hero"><div class="lp-hero-text"></div></div>
+          <div class="lp-subs"><div class="lp-sub"></div><div class="lp-sub"></div><div class="lp-sub"></div></div>
+          <div class="lp-cards"><div class="lp-card"></div><div class="lp-card"></div><div class="lp-card"></div></div>
+        </div></div>
+        <div class="layout-name">Minimal</div>
+        <div class="layout-hint">Clean whitespace · content-first · timeless</div>
+      </div>
+      <!-- Bold Hero -->
+      <div class="layout-card" data-field="layout" data-value="bold-hero" onclick="selectLayout(this,'bold-hero')">
+        <div class="layout-preview"><div class="lp-bold" style="height:100%;display:flex;flex-direction:column">
+          <div class="lp-fullhero" style="flex:1;position:relative"><div class="lp-hero-content"><div class="lp-h1"></div><div class="lp-h2"></div><div class="lp-btn"></div></div></div>
+          <div class="lp-row" style="height:20px;flex-shrink:0"><div class="lp-col"></div><div class="lp-col"></div><div class="lp-col"></div></div>
+        </div></div>
+        <div class="layout-name">Bold Hero</div>
+        <div class="layout-hint">Impact-driven · full-bleed imagery · dramatic</div>
+      </div>
+      <!-- Cards -->
+      <div class="layout-card" data-field="layout" data-value="cards" onclick="selectLayout(this,'cards')">
+        <div class="layout-preview"><div class="lp-cards-lay" style="height:100%;padding-top:2px">
+          <div class="lp-topbar"></div>
+          <div class="lp-grid">
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+            <div class="lp-gcard"><div class="lp-gcard-img"></div><div class="lp-gcard-line"></div><div class="lp-gcard-line short"></div></div>
+          </div>
+        </div></div>
+        <div class="layout-name">Card Grid</div>
+        <div class="layout-hint">Organized · portfolio-friendly · modular</div>
+      </div>
+      <!-- Split Screen -->
+      <div class="layout-card" data-field="layout" data-value="split" onclick="selectLayout(this,'split')">
+        <div class="layout-preview"><div class="lp-split" style="height:100%">
+          <div class="lp-split-inner"><div class="lp-left"><div class="lp-left-t"></div><div class="lp-left-s"></div><div class="lp-left-s" style="width:80%"></div></div><div class="lp-right"><div class="lp-right-card"></div><div class="lp-right-card"></div><div class="lp-right-card"></div></div></div>
+        </div></div>
+        <div class="layout-name">Split Screen</div>
+        <div class="layout-hint">Balanced · story-telling · two-sided narrative</div>
+      </div>
+      <!-- Magazine -->
+      <div class="layout-card" data-field="layout" data-value="magazine" onclick="selectLayout(this,'magazine')">
+        <div class="layout-preview"><div class="lp-magazine" style="height:100%;padding-top:4px">
+          <div class="lp-mag-header"></div>
+          <div class="lp-mag-main"><div class="lp-mag-hero-col"><div class="lp-mag-big"></div><div class="lp-mag-row"><div class="lp-mag-sm"></div><div class="lp-mag-sm"></div></div></div><div class="lp-mag-side"><div class="lp-mag-sitem"></div><div class="lp-mag-sitem"></div><div class="lp-mag-sitem"></div><div class="lp-mag-sitem"></div></div></div>
+        </div></div>
+        <div class="layout-name">Magazine</div>
+        <div class="layout-hint">Editorial · content-heavy · blogs and media</div>
+      </div>
+      <!-- Asymmetric -->
+      <div class="layout-card" data-field="layout" data-value="asymmetric" onclick="selectLayout(this,'asymmetric')">
+        <div class="layout-preview"><div class="lp-asym" style="height:100%;padding-top:4px">
+          <div class="lp-as-top"><div class="lp-as-big"></div><div class="lp-as-small"><div class="lp-as-sm"></div><div class="lp-as-sm"></div></div></div>
+          <div class="lp-as-bot"><div class="lp-as-b1"></div><div class="lp-as-b2"></div></div>
+        </div></div>
+        <div class="layout-name">Asymmetric</div>
+        <div class="layout-hint">Bold · creative · design-forward agencies</div>
+      </div>
+    </div>
+
+    <!-- Color -->
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Color scheme</h2>
+    <div class="card-grid cols3" style="margin-bottom:20px">
+      <div class="sel-card" data-field="colorMode" data-value="palette" onclick="selectCard(this,'colorMode','palette');document.getElementById('palette-picker').classList.add('show');document.getElementById('custom-color').classList.remove('show')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🎨</div>
+        <div class="card-title">Choose a Palette</div>
+        <div class="card-desc">Pick from carefully curated colour sets designed to evoke the right emotion</div>
+      </div>
+      <div class="sel-card" data-field="colorMode" data-value="custom" onclick="selectCard(this,'colorMode','custom');document.getElementById('custom-color').classList.add('show');document.getElementById('palette-picker').classList.remove('show')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🖌️</div>
+        <div class="card-title">Custom Colors</div>
+        <div class="card-desc">Define your exact primary, secondary and accent hex values</div>
+      </div>
+      <div class="sel-card" data-field="colorMode" data-value="ai" onclick="selectCard(this,'colorMode','ai');document.getElementById('palette-picker').classList.remove('show');document.getElementById('custom-color').classList.remove('show')">
+        <div class="card-check">✓</div>
+        <div class="card-icon">🤖</div>
+        <div class="card-title">AI Decides</div>
+        <div class="card-desc">Let the AI choose the perfect palette based on your industry and brand personality</div>
+      </div>
+    </div>
+
+    <div id="palette-picker" class="conditional" style="margin-bottom:24px">
+      <div class="palette-grid" id="palette-grid"></div>
+    </div>
+
+    <div id="custom-color" class="conditional" style="margin-bottom:24px">
+      <div class="color-row">
+        <div class="color-field">
+          <input type="color" value="#6366f1" oninput="state.customColors.primary=this.value;updateSummary()">
+          <label>Primary</label>
+        </div>
+        <div class="color-field">
+          <input type="color" value="#8b5cf6" oninput="state.customColors.secondary=this.value">
+          <label>Secondary</label>
+        </div>
+        <div class="color-field">
+          <input type="color" value="#06b6d4" oninput="state.customColors.accent=this.value">
+          <label>Accent</label>
+        </div>
+        <div class="color-field">
+          <input type="color" value="#ffffff" oninput="state.customColors.bg=this.value">
+          <label>Background</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Typography</h2>
+    <div class="card-grid cols3" style="margin-bottom:32px" id="font-grid"></div>
+
+    <!-- Animation Level -->
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Animation level</h2>
+    <div class="card-grid cols3" style="margin-bottom:20px">
+      <div class="sel-card" data-field="animationLevel" data-value="static" onclick="selectCard(this,'animationLevel','static');document.getElementById('bg-type-row').classList.remove('show')">
+        <div class="card-check">✓</div>
+        <div class="anim-preview">
+          <div class="ap-static"><div class="ap-block"></div><div class="ap-block"></div><div class="ap-block"></div></div>
+        </div>
+        <div class="card-title">Static</div>
+        <div class="card-desc">No animations. Fast loading, clean and professional. Ideal for corporate and accessibility-focused sites.</div>
+      </div>
+      <div class="sel-card" data-field="animationLevel" data-value="half" onclick="selectCard(this,'animationLevel','half');document.getElementById('bg-type-row').classList.add('show')">
+        <div class="card-check">✓</div>
+        <div class="anim-preview" style="position:relative">
+          <div class="ap-half" style="position:relative;height:100%"><div class="ap-element e1"></div><div class="ap-element e2"></div><div class="ap-element e3"></div></div>
+        </div>
+        <div class="card-title">Half Animated</div>
+        <div class="card-desc">Scroll-triggered reveals and subtle hover effects. The sweet spot between performance and delight.</div>
+      </div>
+      <div class="sel-card" data-field="animationLevel" data-value="full" onclick="selectCard(this,'animationLevel','full');document.getElementById('bg-type-row').classList.add('show')">
+        <div class="card-check">✓</div>
+        <div class="anim-preview" style="position:relative;overflow:hidden">
+          <div class="ap-full"><div class="ap-bg"></div><div class="ap-particle p1"></div><div class="ap-particle p2"></div><div class="ap-particle p3"></div><div class="ap-line"></div></div>
+        </div>
+        <div class="card-title">Fully Animated</div>
+        <div class="card-desc">Immersive experience with particles, parallax, transitions and dynamic backgrounds. Maximum visual impact.</div>
+      </div>
+    </div>
+
+    <!-- Background type (conditional) -->
+    <div id="bg-type-row" class="conditional">
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin-bottom:12px">Background style</h2>
+      <div class="card-grid cols4" style="margin-bottom:32px">
+        <div class="sel-card" style="padding:14px" data-field="bgType" data-value="video-loop" onclick="selectCard(this,'bgType','video-loop')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:22px;margin-bottom:8px">🔄</div>
+          <div class="card-title" style="font-size:13px">Loop Video</div>
+          <div class="card-desc" style="font-size:11px">Seamlessly looping ambient video background</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="bgType" data-value="video-short" onclick="selectCard(this,'bgType','video-short')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:22px;margin-bottom:8px">▶️</div>
+          <div class="card-title" style="font-size:13px">Short Clip</div>
+          <div class="card-desc" style="font-size:11px">One-time hero video that plays then freezes</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="bgType" data-value="images" onclick="selectCard(this,'bgType','images')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:22px;margin-bottom:8px">🖼️</div>
+          <div class="card-title" style="font-size:13px">Image Slider</div>
+          <div class="card-desc" style="font-size:11px">Rotating high-quality photography</div>
+        </div>
+        <div class="sel-card" style="padding:14px" data-field="bgType" data-value="particles" onclick="selectCard(this,'bgType','particles')">
+          <div class="card-check">✓</div>
+          <div class="card-icon" style="font-size:22px;margin-bottom:8px">✨</div>
+          <div class="card-title" style="font-size:13px">Particles</div>
+          <div class="card-desc" style="font-size:11px">CSS/canvas particle system or gradient animation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: PAGES / SECTIONS ══ -->
+  <div class="step" id="step-4">
+    <div class="step-eyebrow">Structure</div>
+    <h1 class="step-title" id="step4-title">Choose your<br><span>sections</span></h1>
+    <p class="step-sub" id="step4-sub">Select the sections you want on your one-page site. You can always reorder them later.</p>
+
+    <!-- ONE PAGER content -->
+    <div id="onepager-content">
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:14px">Sections to include</h2>
+      <div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px" id="sections-grid"></div>
+    </div>
+
+    <!-- MULTI PAGER content -->
+    <div id="multipager-content" style="display:none">
+
+      <!-- Page count -->
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:8px">How many pages?</h2>
+      <p class="tip-box" style="margin-bottom:16px"><b>Our recommendation:</b> 5 pages (Home, About, Services, Blog, Contact) is the sweet spot for most SMEs — enough depth without overwhelming visitors or delaying launch.</p>
+      <div class="count-row" style="margin-bottom:32px">
+        <button class="count-btn" onclick="selectCount(this,3)">3</button>
+        <button class="count-btn" onclick="selectCount(this,5)">5</button>
+        <button class="count-btn" onclick="selectCount(this,8)">8</button>
+        <button class="count-btn" onclick="selectCount(this,10)">10</button>
+        <button class="count-btn custom-count" onclick="promptCustomCount(this)">Custom</button>
+      </div>
+
+      <!-- Toggles -->
+      <div style="margin-bottom:28px">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-title">Dynamic website with CMS</div>
+            <div class="toggle-desc">Build a database / content management system so you can update products, blog posts, team members etc. without a developer</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-dynamic" onchange="state.isDynamic=this.checked;updateSummary()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-title">Multilingual website</div>
+            <div class="toggle-desc">Support multiple languages. Note: each additional language increases development time and potential translation errors</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-multi" onchange="state.isMultilingual=this.checked;document.getElementById('lang-picker').style.display=this.checked?'block':'none';updateSummary()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div id="lang-picker" style="display:none;margin-bottom:28px">
+        <label class="field-label">Which languages?</label>
+        <div class="lang-grid" id="lang-grid"></div>
+        <div class="tip-box">⚠️ <b>Heads up:</b> The more languages you add, the longer the project takes and the higher the chance of translation inconsistencies. We recommend starting with 2 max.</div>
+      </div>
+
+      <!-- Page type selection -->
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:6px">Select your pages</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Choose up to <span id="page-count-display">5</span> pages. Some pages are automatically bundled.</p>
+      <div class="pages-grid" id="pages-grid"></div>
+
+      <!-- Shop note -->
+      <div id="shop-note" class="tip-box" style="display:none;margin-top:16px">🛒 <b>Shop included:</b> Your prompt will automatically include Single Product Page, Cart, and a Checkout placeholder (payment gateway is configured separately).</div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 5: SEO ══ -->
+  <div class="step" id="step-5">
+    <div class="step-eyebrow">Search & Visibility</div>
+    <h1 class="step-title">SEO &<br><span>Performance</span></h1>
+    <p class="step-sub">Choose how much SEO optimisation you want baked into your website from day one.</p>
+
+    <div class="card-grid cols3">
+      <div class="seo-card full" data-value="full" onclick="selectSEO(this,'full')">
+        <div class="seo-badge full">⚡ Full SEO</div>
+        <h3>Complete Optimisation</h3>
+        <p>Everything you need to rank. Includes GA4 and Google Search Console setup guidance, plus every on-page technical element.</p>
+        <ul class="seo-features">
+          <li>Google Analytics 4 setup</li>
+          <li>Google Search Console integration</li>
+          <li>XML Sitemap generation</li>
+          <li>robots.txt &amp; llms.txt</li>
+          <li>Meta titles &amp; descriptions (all pages)</li>
+          <li>Open Graph / social sharing tags</li>
+          <li>Schema.org structured data</li>
+          <li>Alt text for all images</li>
+          <li>Canonical tags</li>
+          <li>H1–H6 hierarchy</li>
+          <li>Keyword mapping per page</li>
+          <li>Core Web Vitals optimisation</li>
+        </ul>
+      </div>
+      <div class="seo-card half" data-value="half" onclick="selectSEO(this,'half')">
+        <div class="seo-badge half">🔶 Half SEO</div>
+        <h3>Essential Optimisation</h3>
+        <p>The core on-page elements to make your site search-friendly without the analytics infrastructure setup.</p>
+        <ul class="seo-features">
+          <li>Meta titles &amp; descriptions</li>
+          <li>Open Graph tags</li>
+          <li>Schema.org markup</li>
+          <li>Page excerpts / summaries</li>
+          <li>Alt text for key images</li>
+          <li>Basic H1–H3 structure</li>
+          <li style="opacity:.4;text-decoration:line-through">GA4 / GSC setup</li>
+          <li style="opacity:.4;text-decoration:line-through">Sitemap / robots.txt</li>
+          <li style="opacity:.4;text-decoration:line-through">llms.txt</li>
+        </ul>
+      </div>
+      <div class="seo-card none" data-value="none" onclick="selectSEO(this,'none')">
+        <div class="seo-badge none">⬜ No SEO</div>
+        <h3>Skip for Now</h3>
+        <p>Focus entirely on the design and functionality. SEO can be added in a later phase of the project.</p>
+        <ul class="seo-features">
+          <li>Fully designed pages</li>
+          <li>No SEO elements added</li>
+          <li>Faster initial build</li>
+          <li style="opacity:.4;text-decoration:line-through">All SEO features</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 6: GENERATE ══ -->
+  <div class="step" id="step-6">
+    <div class="step-eyebrow">You're ready</div>
+    <h1 class="step-title">Generate your<br><span>website prompt</span></h1>
+    <p class="step-sub">Review your choices, then hit generate. Your complete website brief will be crafted and ready to paste into any AI tool.</p>
+
+    <div class="gen-summary">
+      <h3>Your selection summary</h3>
+      <div class="gen-summary-grid" id="gen-summary-grid">
+        <div class="gen-item"><div class="gen-item-label">Loading...</div></div>
+      </div>
+    </div>
+
+    <div class="coffee-hint">
+      <span class="coffee-emoji">☕</span>
+      <div class="coffee-text">
+        <b>Grab a coffee while I work.</b> I'm not just filling a template — I'm researching your competitors, analysing your industry, and crafting a strategically targeted website prompt. This might take a moment. The result will be worth it.
+      </div>
+    </div>
+
+    <textarea id="prompt-output" class="empty" placeholder="Your generated prompt will appear here once you click 'Generate Prompt' below. It will be a complete, copy-paste-ready brief for building your entire website." readonly></textarea>
+
+    <div class="gen-actions">
+      <button class="btn btn-generate" onclick="generatePrompt()" id="gen-btn">
+        <span>✨</span> Generate Prompt
+      </button>
+      <button class="btn btn-copy" onclick="copyPrompt()" id="copy-btn" disabled>
+        <span>📋</span> Copy Prompt
+      </button>
+    </div>
+    <div class="generating" id="generating-indicator" style="margin-top:16px">
+      <div class="dot-spin"><span></span><span></span><span></span></div>
+      <span>Researching, strategising and writing your prompt…</span>
+    </div>
+  </div>
+
+</div><!-- /steps -->
+
+<!-- FLOATING SUMMARY WIDGET -->
+<div id="summary-widget">
+  <div class="sw-toggle" onclick="toggleSummary()" id="sw-toggle">📋
+    <div class="sw-badge" id="sw-badge">0</div>
+  </div>
+  <div class="sw-panel" id="sw-panel">
+    <h4>Your choices so far</h4>
+    <div id="sw-content"><p style="font-size:12px;color:var(--muted)">Complete earlier steps to see your summary here.</p></div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<div id="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-ghost" id="btn-back" onclick="navigate(-1)" style="visibility:hidden">
+      ← Back
+    </button>
+    <button class="btn btn-primary" id="btn-next" onclick="navigate(1)">
+      Continue →
+    </button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+const state = {
+  step: 1,
+  siteType: null, purpose: null, purposeCustom: '',
+  companyName: '', industry: '', targetAudience: '', usp: '',
+  tagline: '', competitors: '', tone: null, mustHave: '',
+  additionalNotes: '', uploadedFiles: [],
+  layout: null,
+  colorMode: null, selectedPalette: null,
+  customColors: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#06b6d4', bg: '#ffffff' },
+  font: null,
+  animationLevel: null, bgType: null,
+  pageCount: null, isDynamic: false, isMultilingual: false,
+  selectedLanguages: [], selectedPages: [], selectedSections: [],
+  seoLevel: null
+};
+
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+const PALETTES = [
+  { id:'ocean', name:'Ocean', vibe:'Professional & Trust', colors:['#0f172a','#1e40af','#3b82f6','#93c5fd','#f0f9ff'] },
+  { id:'forest', name:'Forest', vibe:'Natural & Organic', colors:['#052e16','#166534','#22c55e','#86efac','#f0fdf4'] },
+  { id:'sunset', name:'Sunset', vibe:'Energetic & Warm', colors:['#450a0a','#b91c1c','#f97316','#fbbf24','#fff7ed'] },
+  { id:'midnight', name:'Midnight', vibe:'Modern & Elegant', colors:['#030712','#111827','#4f46e5','#818cf8','#f1f5f9'] },
+  { id:'minimal', name:'Minimal', vibe:'Clean & Timeless', colors:['#09090b','#18181b','#52525b','#d4d4d8','#fafafa'] },
+  { id:'rose', name:'Rose Gold', vibe:'Luxury & Feminine', colors:['#1c1917','#57534e','#b45309','#f59e0b','#fef3c7'] },
+  { id:'tech', name:'Tech Blue', vibe:'Innovation & Speed', colors:['#020617','#0c4a6e','#0284c7','#38bdf8','#f0f9ff'] },
+  { id:'nature', name:'Earthy', vibe:'Authentic & Grounded', colors:['#1c1917','#44403c','#a16207','#d97706','#fef9c3'] },
+  { id:'purple', name:'Royal', vibe:'Creative & Bold', colors:['#0a0118','#3b0764','#7c3aed','#a78bfa','#f5f3ff'] },
+  { id:'coral', name:'Coral Pop', vibe:'Playful & Vibrant', colors:['#1f1f1f','#be123c','#f43f5e','#fb7185','#fff1f2'] },
+];
+
+const FONTS = [
+  { id:'inter-spaceG', name:'Inter + Space Grotesk', style:'font-family:Inter,sans-serif', sample:'Modern & Clear', hint:'Clean Sans • SaaS, Tech, Corporate' },
+  { id:'playfair-lato', name:'Playfair Display + Lato', style:'font-family:Georgia,serif', sample:'Elegant & Classic', hint:'Serif + Sans • Luxury, Law, Finance' },
+  { id:'poppins-raleway', name:'Poppins + Raleway', style:'font-family:Arial Rounded MT,sans-serif', sample:'Rounded & Friendly', hint:'Soft Sans • Health, Education, Apps' },
+  { id:'montserrat-openSans', name:'Montserrat + Open Sans', style:'font-family:Arial,sans-serif', sample:'Bold & Professional', hint:'Strong Sans • Agency, Marketing' },
+  { id:'bricolage', name:'Bricolage Grotesque', style:'font-family:Impact,sans-serif;font-weight:700', sample:'Expressive & Bold', hint:'Display • Creative, Fashion, Editorial' },
+  { id:'ai-font', name:'AI Chooses', style:'', sample:'Let the AI decide ✨', hint:'Best fit for your brand and industry' },
+];
+
+const PAGES = [
+  { id:'home', icon:'🏠', name:'Home', locked:true },
+  { id:'about', icon:'👤', name:'About Us' },
+  { id:'services', icon:'🛠️', name:'Services' },
+  { id:'products', icon:'📦', name:'Products / Shop', triggers:'shop' },
+  { id:'portfolio', icon:'🖼️', name:'Portfolio / Work' },
+  { id:'blog', icon:'📝', name:'Blog' },
+  { id:'contact', icon:'📬', name:'Contact' },
+  { id:'pricing', icon:'💰', name:'Pricing' },
+  { id:'team', icon:'👥', name:'Team' },
+  { id:'testimonials', icon:'⭐', name:'Testimonials' },
+  { id:'faq', icon:'❓', name:'FAQ' },
+  { id:'landing', icon:'🎯', name:'Landing Page' },
+  { id:'gallery', icon:'🖼️', name:'Gallery' },
+  { id:'case-studies', icon:'📊', name:'Case Studies' },
+  { id:'press', icon:'📰', name:'Press / Media' },
+  { id:'careers', icon:'💼', name:'Careers' },
+  { id:'events', icon:'📅', name:'Events' },
+];
+
+const SECTIONS = [
+  { id:'hero', icon:'🚀', name:'Hero / Banner' },
+  { id:'about', icon:'📖', name:'About / Story' },
+  { id:'features', icon:'⭐', name:'Features / Benefits' },
+  { id:'services', icon:'🛠️', name:'Services' },
+  { id:'process', icon:'🔄', name:'How It Works' },
+  { id:'portfolio', icon:'🖼️', name:'Portfolio / Work' },
+  { id:'team', icon:'👥', name:'Meet the Team' },
+  { id:'testimonials', icon:'💬', name:'Testimonials' },
+  { id:'stats', icon:'📊', name:'Stats / Numbers' },
+  { id:'blog', icon:'📝', name:'Blog / News' },
+  { id:'faq', icon:'❓', name:'FAQ' },
+  { id:'cta', icon:'🎯', name:'Call to Action' },
+  { id:'contact', icon:'📬', name:'Contact' },
+  { id:'partners', icon:'🤝', name:'Partners / Clients' },
+];
+
+const LANGUAGES = ['English','Malay','Mandarin','Spanish','French','German','Arabic','Japanese','Korean','Portuguese','Italian','Hindi','Thai','Vietnamese','Indonesian'];
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  buildDots();
+  buildPalettes();
+  buildFonts();
+  buildPages();
+  buildSections();
+  buildLanguages();
+  updateNav();
+}
+
+function buildDots() {
+  const dots = document.getElementById('step-dots');
+  const labels = ['Foundation','Your Brand','Design','Pages','SEO','Generate'];
+  dots.innerHTML = labels.map((l,i) => `<div class="dot ${i===0?'active':''}" id="dot-${i+1}" title="${l}"></div>`).join('');
+}
+
+function buildPalettes() {
+  const g = document.getElementById('palette-grid');
+  g.innerHTML = PALETTES.map(p => `
+    <div class="palette-card" id="pal-${p.id}" onclick="selectPalette('${p.id}')">
+      <div class="palette-swatches">${p.colors.map(c=>`<div class="swatch" style="background:${c}"></div>`).join('')}</div>
+      <div class="palette-name">${p.name}</div>
+      <div class="palette-vibe">${p.vibe}</div>
+    </div>`).join('');
+}
+
+function buildFonts() {
+  const g = document.getElementById('font-grid');
+  g.innerHTML = FONTS.map(f => `
+    <div class="font-card" data-field="font" data-value="${f.id}" onclick="selectCard(this,'font','${f.id}')">
+      <div class="font-sample" style="${f.style}">${f.sample}</div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:3px">${f.name}</div>
+      <div class="font-meta">${f.hint}</div>
+    </div>`).join('');
+}
+
+function buildPages() {
+  const g = document.getElementById('pages-grid');
+  g.innerHTML = PAGES.map(p => `
+    <div class="page-chip${p.locked?' selected locked':''}" id="page-${p.id}">
+      <span class="page-chip-icon">${p.icon}</span>
+      <span class="page-chip-name">${p.name}</span>
+    </div>`).join('');
+  PAGES.forEach(p => {
+    if (!p.locked) {
+      document.getElementById('page-'+p.id).addEventListener('click', () => togglePage(p.id));
+    }
+  });
+  state.selectedPages = ['home'];
+}
+
+function buildSections() {
+  const g = document.getElementById('sections-grid');
+  g.innerHTML = SECTIONS.map(s => `
+    <div class="section-chip" id="sec-${s.id}" onclick="toggleSection('${s.id}')">
+      <span class="section-chip-icon">${s.icon}</span>
+      ${s.name}
+    </div>`).join('');
+  // Pre-select hero
+  toggleSection('hero', true);
+}
+
+function buildLanguages() {
+  const g = document.getElementById('lang-grid');
+  g.innerHTML = LANGUAGES.map(l => `
+    <div class="lang-chip" onclick="toggleLang('${l}')" id="lang-${l.replace(/\s/g,'_')}">${l}</div>`).join('');
+  // English always selected
+  toggleLang('English', true);
+}
+
+// ══════════════════════════════════════════
+//  SELECTION HELPERS
+// ══════════════════════════════════════════
+function selectCard(el, field, value) {
+  document.querySelectorAll(`[data-field="${field}"]`).forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  state[field] = value;
+  if (field==='purpose') {
+    document.getElementById('purpose-other-field').classList.toggle('show', value==='other');
+  }
+  updateSummary();
+}
+
+function selectLayout(el, value) {
+  document.querySelectorAll('[data-field="layout"]').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.layout = value;
+  updateSummary();
+}
+
+function selectPalette(id) {
+  document.querySelectorAll('.palette-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('pal-'+id).classList.add('selected');
+  state.selectedPalette = id;
+  updateSummary();
+}
+
+function selectSEO(el, value) {
+  document.querySelectorAll('.seo-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.seoLevel = value;
+  updateSummary();
+}
+
+function selectCount(el, n) {
+  document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  state.pageCount = n;
+  document.getElementById('page-count-display').textContent = n;
+  updateSummary();
+}
+
+function promptCustomCount(el) {
+  const n = parseInt(prompt('Enter number of pages (1–20):'));
+  if (n && n>0 && n<=20) {
+    document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('selected'));
+    el.classList.add('selected');
+    el.textContent = n;
+    state.pageCount = n;
+    document.getElementById('page-count-display').textContent = n;
+    updateSummary();
+  }
+}
+
+function togglePage(id) {
+  const el = document.getElementById('page-'+id);
+  const pg = PAGES.find(p=>p.id===id);
+  if (state.selectedPages.includes(id)) {
+    state.selectedPages = state.selectedPages.filter(p=>p!==id);
+    el.classList.remove('selected');
+  } else {
+    state.selectedPages.push(id);
+    el.classList.add('selected');
+  }
+  // Shop note
+  const hasShop = state.selectedPages.includes('products');
+  document.getElementById('shop-note').style.display = hasShop ? 'block' : 'none';
+  updateSummary();
+}
+
+function toggleSection(id, force) {
+  const el = document.getElementById('sec-'+id);
+  if (!el) return;
+  if (force===true) { el.classList.add('selected'); if(!state.selectedSections.includes(id)) state.selectedSections.push(id); return; }
+  if (state.selectedSections.includes(id)) {
+    state.selectedSections = state.selectedSections.filter(s=>s!==id);
+    el.classList.remove('selected');
+  } else {
+    state.selectedSections.push(id);
+    el.classList.add('selected');
+  }
+  updateSummary();
+}
+
+function toggleLang(lang, force) {
+  const key = 'lang-'+lang.replace(/\s/g,'_');
+  const el = document.getElementById(key);
+  if (!el) return;
+  if (force===true) { el.classList.add('selected'); if(!state.selectedLanguages.includes(lang)) state.selectedLanguages.push(lang); return; }
+  if (state.selectedLanguages.includes(lang)) {
+    if (lang==='English') return; // can't remove English
+    state.selectedLanguages = state.selectedLanguages.filter(l=>l!==lang);
+    el.classList.remove('selected');
+  } else {
+    state.selectedLanguages.push(lang);
+    el.classList.add('selected');
+  }
+  updateSummary();
+}
+
+// ══════════════════════════════════════════
+//  FILE UPLOAD
+// ══════════════════════════════════════════
+function handleFileInput(input) {
+  Array.from(input.files).forEach(addFile);
+  input.value = '';
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over'); Array.from(e.dataTransfer.files).forEach(addFile); }
+function addFile(file) {
+  const icon = file.type.includes('pdf')?'📄':file.type.includes('image')?'🖼️':file.type.includes('presentation')||file.name.endsWith('.ppt')||file.name.endsWith('.pptx')?'📊':'📎';
+  state.uploadedFiles.push({ name: file.name, size: file.size, icon });
+  renderFiles();
+}
+function renderFiles() {
+  const list = document.getElementById('file-list');
+  list.innerHTML = state.uploadedFiles.map((f,i) => `
+    <div class="file-chip">
+      <span class="file-chip-icon">${f.icon}</span>
+      <span class="file-chip-name">${f.name}</span>
+      <span class="file-chip-remove" onclick="removeFile(${i})">✕</span>
+    </div>`).join('');
+}
+function removeFile(i) { state.uploadedFiles.splice(i,1); renderFiles(); }
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function navigate(dir) {
+  const next = state.step + dir;
+  if (next < 1 || next > 6) return;
+  if (dir === 1 && !validateStep(state.step)) return;
+  document.getElementById(`step-${state.step}`).classList.remove('active');
+  state.step = next;
+  document.getElementById(`step-${state.step}`).classList.add('active');
+  // Adapt step 4
+  if (state.step === 4) adaptStep4();
+  // Update summary on step 6
+  if (state.step === 6) renderGenSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateProgress();
+  updateNav();
+  updateSummaryWidget();
+}
+
+function validateStep(step) {
+  if (step===1) { if(!state.siteType||!state.purpose){ alert('Please select a site type and purpose before continuing.'); return false; } }
+  if (step===2) { if(!state.companyName.trim()||!state.industry.trim()){ alert('Please fill in your company name and industry.'); return false; } }
+  return true;
+}
+
+function adaptStep4() {
+  const isOne = state.siteType === 'one-pager';
+  document.getElementById('step4-title').innerHTML = isOne ? 'Choose your<br><span>sections</span>' : 'Build your<br><span>page structure</span>';
+  document.getElementById('step4-sub').textContent = isOne ? 'Select which sections appear on your single-page site.' : 'Define the pages, features, and complexity of your site.';
+  document.getElementById('onepager-content').style.display = isOne ? 'block' : 'none';
+  document.getElementById('multipager-content').style.display = isOne ? 'none' : 'block';
+}
+
+function updateProgress() {
+  const pct = (state.step / 6) * 100;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('step-label').textContent = `Step ${state.step} of 6`;
+  for (let i=1;i<=6;i++) {
+    const dot = document.getElementById('dot-'+i);
+    if (!dot) continue;
+    dot.className = 'dot' + (i<state.step?' done':i===state.step?' active':'');
+  }
+}
+
+function updateNav() {
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+  back.style.visibility = state.step > 1 ? 'visible' : 'hidden';
+  if (state.step === 6) {
+    next.style.display = 'none';
+  } else {
+    next.style.display = '';
+    next.textContent = state.step === 5 ? 'Review & Generate →' : 'Continue →';
+  }
+}
+
+// ══════════════════════════════════════════
+//  FLOATING SUMMARY WIDGET
+// ══════════════════════════════════════════
+function updateSummaryWidget() {
+  const widget = document.getElementById('summary-widget');
+  widget.style.display = state.step >= 2 ? 'block' : 'none';
+  updateSummary();
+}
+
+function updateSummary() {
+  let count = 0;
+  const rows = [];
+  if (state.siteType) { rows.push({k:'Type', v: state.siteType==='one-pager'?'One-Pager':'Multi-Pager'}); count++; }
+  if (state.purpose) { rows.push({k:'Purpose', v: state.purpose.charAt(0).toUpperCase()+state.purpose.slice(1)}); count++; }
+  if (state.companyName) { rows.push({k:'Brand', v: state.companyName}); count++; }
+  if (state.tone) { rows.push({k:'Tone', v: state.tone.charAt(0).toUpperCase()+state.tone.slice(1)}); count++; }
+  if (state.layout) { rows.push({k:'Layout', v: state.layout.replace(/-/g,' ')}); count++; }
+  if (state.colorMode) { rows.push({k:'Colors', v: state.colorMode==='ai'?'AI decides':state.colorMode==='palette'&&state.selectedPalette?PALETTES.find(p=>p.id===state.selectedPalette)?.name||'Palette':'Custom'}); count++; }
+  if (state.font) { rows.push({k:'Font', v: FONTS.find(f=>f.id===state.font)?.name||state.font}); count++; }
+  if (state.animationLevel) { rows.push({k:'Animation', v: state.animationLevel.charAt(0).toUpperCase()+state.animationLevel.slice(1)}); count++; }
+  if (state.seoLevel) { rows.push({k:'SEO', v: state.seoLevel.toUpperCase()}); count++; }
+  document.getElementById('sw-badge').textContent = count;
+  document.getElementById('sw-content').innerHTML = rows.length
+    ? rows.map(r=>`<div class="sw-row"><span class="sw-key">${r.k}</span><span class="sw-val">${r.v}</span></div>`).join('')
+    : '<p style="font-size:12px;color:var(--muted)">Complete earlier steps to see your summary here.</p>';
+}
+
+function toggleSummary() {
+  const panel = document.getElementById('sw-panel');
+  panel.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+//  GEN SUMMARY (step 6)
+// ══════════════════════════════════════════
+function renderGenSummary() {
+  const palette = PALETTES.find(p=>p.id===state.selectedPalette);
+  const font = FONTS.find(f=>f.id===state.font);
+  const items = [
+    { label:'Site Type', val: state.siteType==='one-pager'?'One-Page Website':'Multi-Page Website' },
+    { label:'Purpose', val: state.purpose?.charAt(0).toUpperCase()+state.purpose?.slice(1)||'—' },
+    { label:'Brand', val: state.companyName||'—' },
+    { label:'Industry', val: state.industry||'—' },
+    { label:'Layout', val: state.layout?.replace(/-/g,' ')||'—' },
+    { label:'Colors', val: state.colorMode==='ai'?'AI-chosen':palette?.name||(state.colorMode==='custom'?'Custom':'—') },
+    { label:'Typography', val: font?.name||'—' },
+    { label:'Animation', val: state.animationLevel||'—' },
+    { label:'Pages/Sections', val: state.siteType==='one-pager'?`${state.selectedSections.length} sections`:`${state.selectedPages.length} pages` },
+    { label:'SEO Level', val: state.seoLevel?.toUpperCase()||'—' },
+    { label:'Multilingual', val: state.isMultilingual ? state.selectedLanguages.join(', ') : 'No' },
+    { label:'CMS / Dynamic', val: state.isDynamic ? 'Yes' : 'No' },
+  ];
+  document.getElementById('gen-summary-grid').innerHTML = items.map(i=>`
+    <div class="gen-item">
+      <div class="gen-item-label">${i.label}</div>
+      <div class="gen-item-val">${i.val}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  PROMPT GENERATION
+// ══════════════════════════════════════════
+function generatePrompt() {
+  const btn = document.getElementById('gen-btn');
+  const ind = document.getElementById('generating-indicator');
+  btn.disabled = true;
+  ind.classList.add('show');
+
+  setTimeout(() => {
+    const prompt = buildPrompt();
+    const ta = document.getElementById('prompt-output');
+    ta.value = prompt;
+    ta.classList.remove('empty');
+    document.getElementById('copy-btn').disabled = false;
+    btn.disabled = false;
+    ind.classList.remove('show');
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 600) + 'px';
+  }, 2200);
+}
+
+function buildPrompt() {
+  const palette = PALETTES.find(p=>p.id===state.selectedPalette);
+  const font = FONTS.find(f=>f.id===state.font);
+  const isOne = state.siteType === 'one-pager';
+
+  const colorDesc = state.colorMode==='ai'
+    ? 'Choose the optimal color palette based on the brand personality, industry conventions, and the psychological effect you want on the target audience.'
+    : state.colorMode==='palette' && palette
+    ? `Use the "${palette.name}" palette (${palette.colors.join(', ')}) — evokes: ${palette.vibe}.`
+    : `Custom: Primary ${state.customColors.primary}, Secondary ${state.customColors.secondary}, Accent ${state.customColors.accent}, Background ${state.customColors.bg}.`;
+
+  const fontDesc = font?.id === 'ai-font'
+    ? 'Select the optimal typeface pairing for this brand — consider the industry, tone, and readability across screen sizes.'
+    : `Font pairing: ${font?.name||'Modern sans-serif'}. ${font?.hint||''}`;
+
+  const animDesc = {
+    static: 'Static website — no JavaScript animations. Prioritise speed, accessibility, and clean layout. Use CSS for micro-interactions on hover only.',
+    half: `Half-animated — implement scroll-triggered reveal animations (fade in, slide up) for key sections. Subtle hover effects on CTAs and cards. Background style: ${state.bgType||'clean gradient'}.`,
+    full: `Fully animated — immersive experience with: entrance animations for every section, parallax scrolling, smooth page transitions, interactive cursor effects. Background: ${state.bgType||'dynamic particles/gradient'}. Use GSAP or equivalent.`
+  }[state.animationLevel] || 'Standard CSS transitions.';
+
+  const seoBlock = {
+    full: `## SEO — Full Optimisation
+- Integrate Google Analytics 4 (provide setup instructions and code snippets)
+- Add Google Search Console verification meta tag and sitemap submission guide
+- Generate XML sitemap for all pages
+- Create robots.txt and llms.txt files
+- Every page must have: unique meta title (50–60 chars), meta description (150–160 chars), canonical tag, Open Graph tags, Twitter Card tags
+- Implement JSON-LD Schema.org markup: Organization, WebSite, WebPage, and page-specific types (Product, Article, LocalBusiness, etc.)
+- All images: descriptive alt text, lazy loading, next-gen formats (WebP)
+- Proper H1–H6 heading hierarchy on every page
+- Keyword mapping: research and assign 1 primary + 3 secondary keywords per page based on the business
+- Core Web Vitals: optimise LCP, FID/INP, CLS — target green scores
+- Internal linking strategy across all pages`,
+    half: `## SEO — Essential Optimisation
+- Every page: unique meta title, meta description, Open Graph tags
+- JSON-LD Schema: Organization and WebPage minimum
+- Key images: alt text
+- H1–H3 heading structure
+- Page excerpts/summaries for social sharing`,
+    none: `## SEO
+No SEO optimisation required for this phase. Build clean, semantic HTML that can have SEO added later.`
+  }[state.seoLevel] || '';
+
+  const pagesBlock = isOne
+    ? `## One-Page Structure — Sections (in order)
+${state.selectedSections.map((s,i) => {
+  const sec = SECTIONS.find(x=>x.id===s);
+  return `${i+1}. **${sec?.name||s}** ${sec?.icon||''}`;
+}).join('\n')}
+
+Design each section as a full-width scroll snap or smooth-scroll section. Include clear visual separation and consistent spacing (80–120px padding per section).`
+    : `## Multi-Page Architecture
+**Total pages: ${state.pageCount || state.selectedPages.length}**
+${state.selectedPages.map(p=>{
+  const pg = PAGES.find(x=>x.id===p);
+  const extras = p==='products' ? '\n   → Automatically include: Single Product page, Cart page, Checkout page (payment gateway placeholder)' : '';
+  return `- **${pg?.name||p}** ${pg?.icon||''}${extras}`;
+}).join('\n')}
+
+### Navigation
+Build a sticky navigation header with smooth scroll or page routing. Include a footer with sitemap links, social icons, and contact info.
+${state.isDynamic ? '\n### CMS / Database\nBuild with a headless CMS or database integration so the client can manage: blog posts, team members, products, and testimonials without code changes. Recommend Contentful, Sanity, Supabase, or Firebase based on the tech stack.' : ''}
+${state.isMultilingual ? `\n### Multilingual\nSupport languages: ${state.selectedLanguages.join(', ')}. Use i18n routing (e.g., /en/, /ms/, /zh/). All UI strings must be in a centralised translation file. Flag switcher in the navigation.` : ''}`;
+
+  const files = state.uploadedFiles.length
+    ? `\n## Uploaded Brand Assets\nThe client has provided the following files — use them to inform every design decision:\n${state.uploadedFiles.map(f=>`- ${f.icon} ${f.name}`).join('\n')}\nExtract: brand colours, logo proportions, typography, imagery style, and tone from these assets.`
+    : '';
+
+  return `# Website Development Prompt — ${state.companyName || 'Client'} Website
+
+> You are a world-class web designer and full-stack developer. Build a complete, production-ready website following every specification below. Research the competitor websites listed and ensure this site stands out — better UX, more engaging copy hooks, stronger visual hierarchy. Do not produce a generic template; make every design decision intentional.
+
+---
+
+## Project Overview
+- **Website Type**: ${isOne ? 'Single-Page Website' : 'Multi-Page Website'} (${state.purpose ? state.purpose.charAt(0).toUpperCase()+state.purpose.slice(1) : 'General'})
+- **Brand**: ${state.companyName || '[Company Name]'}
+- **Industry**: ${state.industry || '[Industry]'}
+- **Primary Goal**: ${state.purpose || '[Purpose]'}
+${state.purposeCustom ? `- **Details**: ${state.purposeCustom}` : ''}
+
+---
+
+## Brand & Business Context
+- **Target Audience**: ${state.targetAudience || '[Define target audience]'}
+- **Unique Selling Proposition**: ${state.usp || '[Define USP]'}
+- **Key Message / Tagline**: ${state.tagline || '[Define tagline]'}
+- **Tone of Voice**: ${state.tone ? state.tone.charAt(0).toUpperCase()+state.tone.slice(1) : 'Professional'} — every headline, subheading, CTA, and body copy must reflect this tone
+- **Competitors to Study**: ${state.competitors || '[Research top 3 industry competitors]'} — analyse their layout, messaging, differentiators, and gaps
+- **Must-Have Features**: ${state.mustHave || 'Standard professional features'}
+${state.additionalNotes ? `- **Additional Notes**: ${state.additionalNotes}` : ''}
+${files}
+
+---
+
+## Design System
+
+### Layout
+**Style**: ${state.layout ? state.layout.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) : 'Modern & Clean'}
+${state.layout === 'minimal' ? 'Prioritise whitespace. Content is the hero. Generous padding, limited colour, precise typography.' : ''}
+${state.layout === 'bold-hero' ? 'Full-bleed hero with dramatic typography overlay. Scroll to reveal content sections with strong visual rhythm.' : ''}
+${state.layout === 'cards' ? 'Grid-based card system. Clean hierarchy within each card. Equal-weight content blocks with consistent spacing.' : ''}
+${state.layout === 'split' ? 'Two-column split layouts throughout. Image/visual on one side, copy on the other — alternate sides per section.' : ''}
+${state.layout === 'magazine' ? 'Complex multi-column editorial grid. Mixed content widths. Feature content with supporting sidebars.' : ''}
+${state.layout === 'asymmetric' ? 'Break the grid intentionally. Offset elements, overlapping sections, dynamic visual tension. Every layout decision should feel designed, not defaulted.' : ''}
+
+### Colors
+${colorDesc}
+
+### Typography
+${fontDesc}
+
+### Animation & Interactions
+${animDesc}
+
+---
+
+${pagesBlock}
+
+---
+
+${seoBlock}
+
+---
+
+## Technical Requirements
+- **Responsive**: Mobile-first. Pixel-perfect on iPhone SE (375px), standard mobile (390px), tablet (768px), desktop (1280px), wide (1440px+)
+- **Performance**: Lighthouse score target 90+ on all metrics
+- **Accessibility**: WCAG 2.1 AA minimum — colour contrast, keyboard navigation, screen reader labels
+- **Cross-browser**: Chrome, Firefox, Safari, Edge — latest 2 versions
+- **Code quality**: Semantic HTML5, BEM or utility-first CSS, clean JS/TypeScript. Comment non-obvious logic only.
+
+---
+
+## Deliverables
+1. Complete file structure with all pages/sections
+2. Fully styled, responsive design
+3. All interactive elements functional
+4. ${state.seoLevel !== 'none' ? 'All SEO elements implemented' : 'Clean semantic HTML ready for SEO addition'}
+5. README with deployment instructions
+
+---
+
+## Strategic Directive
+Before writing a single line of code:
+1. **Analyse competitors**: ${state.competitors || 'Research top 3 sites in this industry'} — screenshot, note patterns, identify what's missing
+2. **Define visual differentiation**: What will make this site look and feel different from every competitor?
+3. **Craft copy hooks**: Write headline variants for the hero — test against the tone and audience
+4. **Plan the user journey**: Map the path from first scroll to conversion action
+
+Build this as if it were your portfolio piece. Make it exceptional.
+`.trim();
+}
+
+function copyPrompt() {
+  const ta = document.getElementById('prompt-output');
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '<span>✅</span> Copied!';
+    setTimeout(() => { btn.innerHTML = '<span>📋</span> Copy Prompt'; }, 2000);
+  });
+}
+
+// ══════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
