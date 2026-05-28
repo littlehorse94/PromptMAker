@@ -348,6 +348,39 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes scanline{0%{transform:scaleX(0) translateX(-100%)}100%{transform:scaleX(1) translateX(100%)}}
 
 .input-hidden{display:none}
+
+/* ── PROMPT SIZE SELECTOR ── */
+.size-section-label{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.size-section-label::before{content:'';width:16px;height:1px;background:var(--muted2)}
+.size-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px}
+@media(max-width:560px){.size-grid{grid-template-columns:1fr}}
+.size-card{background:var(--s1);border:1.5px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;user-select:none}
+.size-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.size-card.full::after{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+.size-card.balanced::after{background:linear-gradient(90deg,#06b6d4,#6366f1)}
+.size-card.compact::after{background:linear-gradient(90deg,#10b981,#06b6d4)}
+.size-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.size-card.selected.full{border-color:#6366f1;background:rgba(99,102,241,.06);box-shadow:0 0 0 1px rgba(99,102,241,.2),0 8px 24px rgba(99,102,241,.1)}
+.size-card.selected.balanced{border-color:#06b6d4;background:rgba(6,182,212,.05);box-shadow:0 0 0 1px rgba(6,182,212,.2),0 8px 24px rgba(6,182,212,.08)}
+.size-card.selected.compact{border-color:#10b981;background:rgba(16,185,129,.05);box-shadow:0 0 0 1px rgba(16,185,129,.2),0 8px 24px rgba(16,185,129,.08)}
+.size-emoji{font-size:22px;margin-bottom:10px;display:block}
+.size-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px}
+.size-tokens{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.size-card.full .size-tokens{color:#818cf8}
+.size-card.balanced .size-tokens{color:#22d3ee}
+.size-card.compact .size-tokens{color:#34d399}
+.size-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.size-bar{display:flex;gap:3px;margin-top:14px}
+.size-bar-seg{height:3px;flex:1;border-radius:1px;background:var(--border)}
+.size-card.full .size-bar-seg{background:rgba(99,102,241,.5)}
+.size-card.balanced .size-bar-seg:nth-child(-n+2){background:rgba(6,182,212,.5)}
+.size-card.compact .size-bar-seg:nth-child(1){background:rgba(16,185,129,.5)}
+.token-estimate{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px;font-family:'Space Grotesk',sans-serif}
+.token-estimate strong{color:var(--text)}
+.token-estimate .cost-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:6px}
+.cost-full{background:rgba(99,102,241,.15);color:#818cf8}
+.cost-balanced{background:rgba(6,182,212,.12);color:#22d3ee}
+.cost-compact{background:rgba(16,185,129,.12);color:#34d399}
 </style>
 </head>
 <body>
@@ -832,6 +865,35 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       </div>
     </div>
 
+    <!-- Prompt Size Selector -->
+    <div class="size-section-label">Choose your prompt size</div>
+    <div class="size-grid">
+      <div class="size-card full" id="size-full" onclick="selectSize(this,'full')">
+        <span class="size-emoji">📄</span>
+        <div class="size-name">Full</div>
+        <div class="size-tokens">~1,800 tokens</div>
+        <div class="size-desc">Detailed prose brief. Every decision explained. Best for first-time builds or complex sites.</div>
+        <div class="size-bar"><span class="size-bar-seg"></span><span class="size-bar-seg"></span><span class="size-bar-seg"></span></div>
+      </div>
+      <div class="size-card balanced selected" id="size-balanced" onclick="selectSize(this,'balanced')">
+        <span class="size-emoji">⚡</span>
+        <div class="size-name">Balanced <span style="font-size:10px;background:rgba(6,182,212,.15);color:#22d3ee;padding:2px 6px;border-radius:4px;letter-spacing:.05em;font-weight:700">DEFAULT</span></div>
+        <div class="size-tokens">~450 tokens</div>
+        <div class="size-desc">Structured bullets, no padding. All key decisions, 75% fewer tokens. Ideal for most projects.</div>
+        <div class="size-bar"><span class="size-bar-seg"></span><span class="size-bar-seg"></span><span class="size-bar-seg"></span></div>
+      </div>
+      <div class="size-card compact" id="size-compact" onclick="selectSize(this,'compact')">
+        <span class="size-emoji">🎯</span>
+        <div class="size-name">Compact</div>
+        <div class="size-tokens">~150 tokens</div>
+        <div class="size-desc">Pure key-value pairs. Maximum context left for code generation. Best for iterating fast.</div>
+        <div class="size-bar"><span class="size-bar-seg"></span><span class="size-bar-seg"></span><span class="size-bar-seg"></span></div>
+      </div>
+    </div>
+    <div class="token-estimate" id="token-estimate">
+      Using <strong>Balanced</strong> — ~450 tokens used by the prompt, leaving <strong>~99,550</strong> tokens for code generation <span class="cost-tag cost-balanced">recommended</span>
+    </div>
+
     <div class="coffee-hint">
       <span class="coffee-emoji">☕</span>
       <div class="coffee-text">
@@ -890,6 +952,7 @@ const state = {
   companyName: '', industry: '', targetAudience: '', usp: '',
   tagline: '', competitors: '', tone: null, mustHave: '',
   additionalNotes: '', uploadedFiles: [],
+  promptSize: 'balanced',
   layout: null,
   colorMode: null, selectedPalette: null,
   customColors: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#06b6d4', bg: '#ffffff' },
@@ -1282,12 +1345,30 @@ function renderGenSummary() {
 // ══════════════════════════════════════════
 //  PROMPT GENERATION
 // ══════════════════════════════════════════
+// ── SIZE SELECTOR ─────────────────────────
+function selectSize(el, size) {
+  ['full','balanced','compact'].forEach(s => {
+    document.getElementById('size-'+s).classList.remove('selected');
+  });
+  el.classList.add('selected');
+  state.promptSize = size;
+
+  const info = {
+    full:     { tokens:'~1,800', left:'~98,200', label:'Full',     cls:'cost-full',     note:'complete prose brief' },
+    balanced: { tokens:'~450',   left:'~99,550', label:'Balanced', cls:'cost-balanced', note:'recommended' },
+    compact:  { tokens:'~150',   left:'~99,850', label:'Compact',  cls:'cost-compact',  note:'max tokens for code' },
+  }[size];
+  document.getElementById('token-estimate').innerHTML =
+    `Using <strong>${info.label}</strong> — ${info.tokens} tokens used by the prompt, leaving <strong>${info.left}</strong> for code generation <span class="cost-tag ${info.cls}">${info.note}</span>`;
+}
+
 function generatePrompt() {
   const btn = document.getElementById('gen-btn');
   const ind = document.getElementById('generating-indicator');
   btn.disabled = true;
   ind.classList.add('show');
 
+  const delay = state.promptSize === 'full' ? 2200 : state.promptSize === 'balanced' ? 1400 : 800;
   setTimeout(() => {
     const prompt = buildPrompt();
     const ta = document.getElementById('prompt-output');
@@ -1298,162 +1379,184 @@ function generatePrompt() {
     ind.classList.remove('show');
     ta.style.height = 'auto';
     ta.style.height = Math.min(ta.scrollHeight, 600) + 'px';
-  }, 2200);
+  }, delay);
 }
 
-function buildPrompt() {
+// ── SHARED HELPERS ─────────────────────────
+function _color() {
+  const palette = PALETTES.find(p=>p.id===state.selectedPalette);
+  if (state.colorMode==='ai') return 'AI-chosen (match brand personality & industry)';
+  if (state.colorMode==='palette' && palette) return `${palette.name} palette — ${palette.colors.join(', ')} (${palette.vibe})`;
+  return `Custom: primary ${state.customColors.primary}, secondary ${state.customColors.secondary}, accent ${state.customColors.accent}, bg ${state.customColors.bg}`;
+}
+function _font() {
+  const font = FONTS.find(f=>f.id===state.font);
+  return font?.id==='ai-font' ? 'AI-chosen (match industry & tone)' : (font?.name||'Modern sans-serif');
+}
+function _anim() {
+  const map = { static:'static (CSS only)', half:`half-animated, bg: ${state.bgType||'gradient'}`, full:`fully animated GSAP, bg: ${state.bgType||'particles'}` };
+  return map[state.animationLevel]||'standard transitions';
+}
+function _seoLine() {
+  return { full:'Full SEO (GA4, GSC, sitemap, robots.txt, llms.txt, meta/OG/Twitter, JSON-LD schema, alt text, CWV, keywords)', half:'Half SEO (meta, OG, schema, alt text, heading hierarchy)', none:'No SEO' }[state.seoLevel]||'';
+}
+function _pages() {
+  const isOne = state.siteType==='one-pager';
+  if (isOne) return state.selectedSections.map(s=>SECTIONS.find(x=>x.id===s)?.name||s).join(', ');
+  const pages = state.selectedPages.map(p=>PAGES.find(x=>x.id===p)?.name||p);
+  if (state.selectedPages.includes('products')) pages.push('Single Product', 'Cart', 'Checkout (placeholder)');
+  return pages.join(', ');
+}
+function _extras() {
+  const lines = [];
+  if (state.isDynamic) lines.push('CMS/database required');
+  if (state.isMultilingual) lines.push(`Multilingual: ${state.selectedLanguages.join(', ')}`);
+  if (state.uploadedFiles.length) lines.push(`Assets: ${state.uploadedFiles.map(f=>f.name).join(', ')}`);
+  if (state.additionalNotes) lines.push(`Notes: ${state.additionalNotes}`);
+  return lines;
+}
+
+// ── FULL PROMPT (~1800 tokens) ─────────────
+function buildPromptFull() {
+  const isOne = state.siteType==='one-pager';
   const palette = PALETTES.find(p=>p.id===state.selectedPalette);
   const font = FONTS.find(f=>f.id===state.font);
-  const isOne = state.siteType === 'one-pager';
 
   const colorDesc = state.colorMode==='ai'
-    ? 'Choose the optimal color palette based on the brand personality, industry conventions, and the psychological effect you want on the target audience.'
-    : state.colorMode==='palette' && palette
+    ? 'Choose the optimal color palette based on brand personality, industry conventions, and psychological effect on the target audience.'
+    : state.colorMode==='palette'&&palette
     ? `Use the "${palette.name}" palette (${palette.colors.join(', ')}) — evokes: ${palette.vibe}.`
     : `Custom: Primary ${state.customColors.primary}, Secondary ${state.customColors.secondary}, Accent ${state.customColors.accent}, Background ${state.customColors.bg}.`;
 
-  const fontDesc = font?.id === 'ai-font'
-    ? 'Select the optimal typeface pairing for this brand — consider the industry, tone, and readability across screen sizes.'
-    : `Font pairing: ${font?.name||'Modern sans-serif'}. ${font?.hint||''}`;
+  const fontDesc = font?.id==='ai-font'
+    ? 'Select the optimal typeface pairing — consider industry, tone, and readability across screen sizes.'
+    : `${font?.name||'Modern sans-serif'}. ${font?.hint||''}`;
 
   const animDesc = {
-    static: 'Static website — no JavaScript animations. Prioritise speed, accessibility, and clean layout. Use CSS for micro-interactions on hover only.',
-    half: `Half-animated — implement scroll-triggered reveal animations (fade in, slide up) for key sections. Subtle hover effects on CTAs and cards. Background style: ${state.bgType||'clean gradient'}.`,
-    full: `Fully animated — immersive experience with: entrance animations for every section, parallax scrolling, smooth page transitions, interactive cursor effects. Background: ${state.bgType||'dynamic particles/gradient'}. Use GSAP or equivalent.`
-  }[state.animationLevel] || 'Standard CSS transitions.';
+    static:'Static — no JS animations. Prioritise speed and clean layout. CSS micro-interactions on hover only.',
+    half:`Half-animated — scroll-triggered reveal animations, subtle hover effects on CTAs/cards. Background: ${state.bgType||'gradient'}.`,
+    full:`Fully animated — entrance animations every section, parallax, smooth transitions, custom cursor effects. Background: ${state.bgType||'particles/gradient'}. Use GSAP + ScrollTrigger.`
+  }[state.animationLevel]||'Standard CSS transitions.';
 
   const seoBlock = {
-    full: `## SEO — Full Optimisation
-- Integrate Google Analytics 4 (provide setup instructions and code snippets)
-- Add Google Search Console verification meta tag and sitemap submission guide
-- Generate XML sitemap for all pages
-- Create robots.txt and llms.txt files
-- Every page must have: unique meta title (50–60 chars), meta description (150–160 chars), canonical tag, Open Graph tags, Twitter Card tags
-- Implement JSON-LD Schema.org markup: Organization, WebSite, WebPage, and page-specific types (Product, Article, LocalBusiness, etc.)
-- All images: descriptive alt text, lazy loading, next-gen formats (WebP)
-- Proper H1–H6 heading hierarchy on every page
-- Keyword mapping: research and assign 1 primary + 3 secondary keywords per page based on the business
-- Core Web Vitals: optimise LCP, FID/INP, CLS — target green scores
-- Internal linking strategy across all pages`,
-    half: `## SEO — Essential Optimisation
-- Every page: unique meta title, meta description, Open Graph tags
-- JSON-LD Schema: Organization and WebPage minimum
-- Key images: alt text
-- H1–H3 heading structure
-- Page excerpts/summaries for social sharing`,
-    none: `## SEO
-No SEO optimisation required for this phase. Build clean, semantic HTML that can have SEO added later.`
-  }[state.seoLevel] || '';
+    full:`## SEO — Full Optimisation
+- GA4 setup (code snippets + instructions)
+- Google Search Console verification + sitemap submission guide
+- XML sitemap + robots.txt + llms.txt
+- All pages: meta title (50–60 chars), meta description (150–160 chars), canonical, OG tags, Twitter Cards
+- JSON-LD schema: Organization, WebSite, WebPage + page-specific types
+- Images: descriptive alt text, lazy loading, WebP format
+- H1–H6 hierarchy on every page
+- Keyword mapping: 1 primary + 3 secondary per page
+- Core Web Vitals: target green on LCP, INP, CLS
+- Internal linking strategy`,
+    half:`## SEO — Essential Optimisation
+- Meta title, description, OG tags on all pages
+- JSON-LD: Organization + WebPage minimum
+- Key image alt text · H1–H3 structure · Page excerpts`,
+    none:`## SEO\nSkip — build clean semantic HTML ready for SEO addition later.`
+  }[state.seoLevel]||'';
 
   const pagesBlock = isOne
-    ? `## One-Page Structure — Sections (in order)
-${state.selectedSections.map((s,i) => {
-  const sec = SECTIONS.find(x=>x.id===s);
-  return `${i+1}. **${sec?.name||s}** ${sec?.icon||''}`;
-}).join('\n')}
-
-Design each section as a full-width scroll snap or smooth-scroll section. Include clear visual separation and consistent spacing (80–120px padding per section).`
-    : `## Multi-Page Architecture
-**Total pages: ${state.pageCount || state.selectedPages.length}**
-${state.selectedPages.map(p=>{
-  const pg = PAGES.find(x=>x.id===p);
-  const extras = p==='products' ? '\n   → Automatically include: Single Product page, Cart page, Checkout page (payment gateway placeholder)' : '';
-  return `- **${pg?.name||p}** ${pg?.icon||''}${extras}`;
-}).join('\n')}
-
-### Navigation
-Build a sticky navigation header with smooth scroll or page routing. Include a footer with sitemap links, social icons, and contact info.
-${state.isDynamic ? '\n### CMS / Database\nBuild with a headless CMS or database integration so the client can manage: blog posts, team members, products, and testimonials without code changes. Recommend Contentful, Sanity, Supabase, or Firebase based on the tech stack.' : ''}
-${state.isMultilingual ? `\n### Multilingual\nSupport languages: ${state.selectedLanguages.join(', ')}. Use i18n routing (e.g., /en/, /ms/, /zh/). All UI strings must be in a centralised translation file. Flag switcher in the navigation.` : ''}`;
+    ? `## One-Page Sections (in order)\n${state.selectedSections.map((s,i)=>`${i+1}. ${SECTIONS.find(x=>x.id===s)?.name||s}`).join('\n')}\n\nFull-width sections, smooth-scroll, 80–120px padding each.`
+    : `## Pages (${state.pageCount||state.selectedPages.length} total)\n${state.selectedPages.map(p=>{const pg=PAGES.find(x=>x.id===p);const e=p==='products'?'\n   + Single Product, Cart, Checkout (payment placeholder)':'';return `- ${pg?.name||p}${e}`;}).join('\n')}\nSticky nav + footer with sitemap/social/contact.\n${state.isDynamic?'CMS required — headless (Contentful/Sanity/Supabase) for products, blog, team.':''}\n${state.isMultilingual?`Multilingual: ${state.selectedLanguages.join(', ')} — i18n routing, flag switcher.`:''}`;
 
   const files = state.uploadedFiles.length
-    ? `\n## Uploaded Brand Assets\nThe client has provided the following files — use them to inform every design decision:\n${state.uploadedFiles.map(f=>`- ${f.icon} ${f.name}`).join('\n')}\nExtract: brand colours, logo proportions, typography, imagery style, and tone from these assets.`
-    : '';
+    ? `\n## Brand Assets Provided\n${state.uploadedFiles.map(f=>`- ${f.icon} ${f.name}`).join('\n')}\nExtract: colours, logo proportions, typography, imagery style, and tone.`:'';
 
-  return `# Website Development Prompt — ${state.companyName || 'Client'} Website
+  return `# Website Brief — ${state.companyName||'Client'}
 
-> You are a world-class web designer and full-stack developer. Build a complete, production-ready website following every specification below. Research the competitor websites listed and ensure this site stands out — better UX, more engaging copy hooks, stronger visual hierarchy. Do not produce a generic template; make every design decision intentional.
+> Build a complete, production-ready website. Research competitors listed. Stand out — better UX, stronger hierarchy. Every design decision must be intentional.
 
----
+## Project
+- Type: ${isOne?'Single-Page':'Multi-Page'} · ${state.purpose||'General'} · ${state.industry||''}
+- Brand: ${state.companyName||'[Name]'} | Tagline: "${state.tagline||''}"${state.purposeCustom?`\n- Detail: ${state.purposeCustom}`:''}
 
-## Project Overview
-- **Website Type**: ${isOne ? 'Single-Page Website' : 'Multi-Page Website'} (${state.purpose ? state.purpose.charAt(0).toUpperCase()+state.purpose.slice(1) : 'General'})
-- **Brand**: ${state.companyName || '[Company Name]'}
-- **Industry**: ${state.industry || '[Industry]'}
-- **Primary Goal**: ${state.purpose || '[Purpose]'}
-${state.purposeCustom ? `- **Details**: ${state.purposeCustom}` : ''}
-
----
-
-## Brand & Business Context
-- **Target Audience**: ${state.targetAudience || '[Define target audience]'}
-- **Unique Selling Proposition**: ${state.usp || '[Define USP]'}
-- **Key Message / Tagline**: ${state.tagline || '[Define tagline]'}
-- **Tone of Voice**: ${state.tone ? state.tone.charAt(0).toUpperCase()+state.tone.slice(1) : 'Professional'} — every headline, subheading, CTA, and body copy must reflect this tone
-- **Competitors to Study**: ${state.competitors || '[Research top 3 industry competitors]'} — analyse their layout, messaging, differentiators, and gaps
-- **Must-Have Features**: ${state.mustHave || 'Standard professional features'}
-${state.additionalNotes ? `- **Additional Notes**: ${state.additionalNotes}` : ''}
-${files}
-
----
+## Brand Context
+- Audience: ${state.targetAudience||''}
+- USP: ${state.usp||''}
+- Tone: ${state.tone||'professional'} — apply to every headline, CTA, and body copy
+- Competitors: ${state.competitors||'top 3 in industry'} — analyse layout, messaging, gaps
+- Must-have: ${state.mustHave||'standard features'}
+${state.additionalNotes?`- Notes: ${state.additionalNotes}`:''}${files}
 
 ## Design System
-
-### Layout
-**Style**: ${state.layout ? state.layout.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) : 'Modern & Clean'}
-${state.layout === 'minimal' ? 'Prioritise whitespace. Content is the hero. Generous padding, limited colour, precise typography.' : ''}
-${state.layout === 'bold-hero' ? 'Full-bleed hero with dramatic typography overlay. Scroll to reveal content sections with strong visual rhythm.' : ''}
-${state.layout === 'cards' ? 'Grid-based card system. Clean hierarchy within each card. Equal-weight content blocks with consistent spacing.' : ''}
-${state.layout === 'split' ? 'Two-column split layouts throughout. Image/visual on one side, copy on the other — alternate sides per section.' : ''}
-${state.layout === 'magazine' ? 'Complex multi-column editorial grid. Mixed content widths. Feature content with supporting sidebars.' : ''}
-${state.layout === 'asymmetric' ? 'Break the grid intentionally. Offset elements, overlapping sections, dynamic visual tension. Every layout decision should feel designed, not defaulted.' : ''}
-
-### Colors
-${colorDesc}
-
-### Typography
-${fontDesc}
-
-### Animation & Interactions
-${animDesc}
-
----
+- Layout: ${state.layout?.replace(/-/g,' ')||'modern'} — ${({minimal:'Whitespace-first, content is hero.',['bold-hero']:'Full-bleed hero, dramatic type overlay.',cards:'Grid-based card system, modular blocks.',split:'Two-column splits, alternating sides.',magazine:'Multi-column editorial grid.',asymmetric:'Break the grid — offset, overlapping, dynamic tension.'}[state.layout])||''}
+- Colors: ${colorDesc}
+- Typography: ${fontDesc}
+- Animation: ${animDesc}
 
 ${pagesBlock}
 
----
-
 ${seoBlock}
 
----
-
-## Technical Requirements
-- **Responsive**: Mobile-first. Pixel-perfect on iPhone SE (375px), standard mobile (390px), tablet (768px), desktop (1280px), wide (1440px+)
-- **Performance**: Lighthouse score target 90+ on all metrics
-- **Accessibility**: WCAG 2.1 AA minimum — colour contrast, keyboard navigation, screen reader labels
-- **Cross-browser**: Chrome, Firefox, Safari, Edge — latest 2 versions
-- **Code quality**: Semantic HTML5, BEM or utility-first CSS, clean JS/TypeScript. Comment non-obvious logic only.
-
----
+## Technical
+- Responsive: mobile-first, pixel-perfect 375px → 1440px+
+- Performance: Lighthouse 90+ all metrics
+- Accessibility: WCAG 2.1 AA (contrast, keyboard nav, screen reader labels)
+- Cross-browser: Chrome, Firefox, Safari, Edge (latest 2)
+- Code: Semantic HTML5, BEM/utility CSS, clean JS
 
 ## Deliverables
-1. Complete file structure with all pages/sections
-2. Fully styled, responsive design
-3. All interactive elements functional
-4. ${state.seoLevel !== 'none' ? 'All SEO elements implemented' : 'Clean semantic HTML ready for SEO addition'}
-5. README with deployment instructions
+1. All pages/sections, fully styled and responsive
+2. All interactive elements functional
+3. ${state.seoLevel!=='none'?'All SEO elements implemented':'Semantic HTML ready for SEO'}
+4. README with deployment instructions`.trim();
+}
 
----
+// ── BALANCED PROMPT (~450 tokens) ──────────
+function buildPromptBalanced() {
+  const isOne = state.siteType==='one-pager';
+  const extras = _extras();
+  const seoMap = { full:'Full — GA4, GSC, sitemap, robots.txt, llms.txt, meta/OG/Twitter, JSON-LD schema, alt text, CWV, keywords', half:'Half — meta/OG tags, JSON-LD schema, alt text, H1–H3 structure', none:'None — clean semantic HTML only' };
 
-## Strategic Directive
-Before writing a single line of code:
-1. **Analyse competitors**: ${state.competitors || 'Research top 3 sites in this industry'} — screenshot, note patterns, identify what's missing
-2. **Define visual differentiation**: What will make this site look and feel different from every competitor?
-3. **Craft copy hooks**: Write headline variants for the hero — test against the tone and audience
-4. **Plan the user journey**: Map the path from first scroll to conversion action
+  return `# ${state.companyName||'Website'} — Build Brief
 
-Build this as if it were your portfolio piece. Make it exceptional.
-`.trim();
+**Type:** ${isOne?'Single-page':'Multi-page'} · **Purpose:** ${state.purpose||''} · **Industry:** ${state.industry||''}
+**Brand:** ${state.companyName||''} | **Tagline:** "${state.tagline||''}" | **Tone:** ${state.tone||'professional'}
+**Audience:** ${state.targetAudience||''} | **USP:** ${state.usp||''}
+**Competitors:** ${state.competitors||'research top 3'} | **Must-have:** ${state.mustHave||'standard'}
+
+**Design**
+- Layout: ${state.layout?.replace(/-/g,' ')||'modern'}
+- Colors: ${_color()}
+- Font: ${_font()}
+- Animation: ${_anim()}
+
+**${isOne?'Sections':'Pages'} (${isOne?state.selectedSections.length:state.selectedPages.length})**
+${_pages()}
+
+**SEO:** ${seoMap[state.seoLevel]||'none'}
+**Tech:** Mobile-first (375–1440px+) · Lighthouse 90+ · WCAG 2.1 AA · Semantic HTML5
+${extras.length?extras.join(' · '):''}`.trim();
+}
+
+// ── COMPACT PROMPT (~150 tokens) ───────────
+function buildPromptCompact() {
+  const isOne = state.siteType==='one-pager';
+  const extras = _extras();
+  const seoShort = { full:'full SEO (GA4, GSC, sitemap, schema, meta, CWV)', half:'half SEO (meta, schema, alt)', none:'no SEO' };
+
+  const lines = [
+    `Build: ${isOne?'one-page':'multi-page'} ${state.purpose||''} site for ${state.companyName||'client'} (${state.industry||''})`,
+    `Tone: ${state.tone||'professional'} | Audience: ${state.targetAudience||''}`,
+    `USP: ${state.usp||''} | Tagline: "${state.tagline||''}"`,
+    state.competitors ? `Study competitors: ${state.competitors}` : null,
+    `Layout: ${state.layout?.replace(/-/g,' ')||'modern'} | Colors: ${_color()} | Font: ${_font()}`,
+    `Animation: ${_anim()}`,
+    `${isOne?'Sections':'Pages'}: ${_pages()}`,
+    `SEO: ${seoShort[state.seoLevel]||'none'} | Tech: mobile-first, Lighthouse 90+, WCAG AA`,
+    state.mustHave ? `Features: ${state.mustHave}` : null,
+    ...extras
+  ].filter(Boolean);
+
+  return lines.join('\n');
+}
+
+function buildPrompt() {
+  if (state.promptSize === 'full')    return buildPromptFull();
+  if (state.promptSize === 'compact') return buildPromptCompact();
+  return buildPromptBalanced();
 }
 
 function copyPrompt() {
