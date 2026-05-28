@@ -96,11 +96,30 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .upload-title{font-weight:600;font-size:15px;margin-bottom:6px}
 .upload-sub{font-size:13px;color:var(--muted)}
 .upload-sub b{color:var(--accent);cursor:pointer}
-#file-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.file-chip{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px}
-.file-chip-icon{font-size:16px}
-.file-chip-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-chip-remove{cursor:pointer;color:var(--muted);transition:color .2s;font-size:14px;line-height:1}
+/* Naming guide */
+.naming-guide-toggle{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);cursor:pointer;margin-bottom:10px;font-weight:500;user-select:none;background:none;border:none;padding:0;font-family:inherit}
+.naming-guide-toggle:hover{opacity:.75}
+.naming-guide{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;overflow:hidden}
+.naming-grid{display:flex;flex-direction:column;gap:8px}
+.naming-row{font-size:11px;line-height:1.4}
+.naming-file{font-family:'Space Grotesk',monospace;background:rgba(99,102,241,.1);padding:1px 7px;border-radius:4px;font-size:11px;color:var(--text2);display:inline-block}
+.naming-dest{color:var(--muted);padding-left:4px;margin-top:1px}
+.naming-arrow{color:var(--muted);margin-right:3px}
+.naming-where{color:var(--accent);font-weight:600}
+/* File chips */
+#file-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.file-chip{display:flex;align-items:flex-start;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;transition:border-color .2s;max-width:240px}
+.file-chip.is-image{border-color:rgba(99,102,241,.35)}
+.file-chip.is-video{border-color:rgba(16,185,129,.35)}
+.file-chip.is-doc{border-color:rgba(245,158,11,.35)}
+.file-chip.needs-rename{border-color:rgba(245,158,11,.5)}
+.file-chip-thumb{width:32px;height:32px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.file-chip-icon{font-size:20px;line-height:32px;flex-shrink:0;display:block;width:32px;text-align:center}
+.file-chip-body{flex:1;min-width:0}
+.file-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500}
+.file-chip-section{font-size:10px;color:var(--accent);font-weight:500;margin-top:2px;display:block}
+.file-chip-warn{font-size:10px;color:#f59e0b;font-weight:500;margin-top:2px;display:block}
+.file-chip-remove{cursor:pointer;color:var(--muted);transition:color .2s;font-size:13px;line-height:1;flex-shrink:0;margin-top:2px}
 .file-chip-remove:hover{color:#ef4444}
 
 /* ── LAYOUT PREVIEWS ── */
@@ -465,15 +484,29 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
     <!-- File Upload -->
     <div style="margin-bottom:32px">
-      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:6px">Upload your brand assets <span style="font-size:12px;color:var(--muted);font-weight:400">(Optional but strongly recommended)</span></h2>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Uploading your logo, pitch deck, or brand guide helps me design something truly unique to you.</p>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:4px">Upload your brand assets <span style="font-size:12px;color:var(--muted);font-weight:400">(Optional but strongly recommended)</span></h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Pitch decks, brand guides, logos, images &amp; videos. <strong style="color:var(--text)">Every uploaded file is fully used</strong> — documents extracted word-for-word, images placed in the exact right sections.</p>
+      <button class="naming-guide-toggle" onclick="toggleNamingGuide()" id="naming-guide-btn">📂 How to name your files for best results ▾</button>
+      <div class="naming-guide" id="naming-guide" style="display:none">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Rename your files before uploading — the AI will place each one in exactly the right section:</div>
+        <div class="naming-grid">
+          <div class="naming-row"><span class="naming-file">logo.png</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Nav bar + Footer</span></div></div>
+          <div class="naming-row"><span class="naming-file">hero.jpg</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Hero section image/bg</span></div></div>
+          <div class="naming-row"><span class="naming-file">hero-video.mp4</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Hero background video</span></div></div>
+          <div class="naming-row"><span class="naming-file">about.jpg</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">About section</span></div></div>
+          <div class="naming-row"><span class="naming-file">services-1.jpg</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Service cards (1, 2, 3…)</span></div></div>
+          <div class="naming-row"><span class="naming-file">portfolio-1.jpg</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Portfolio grid</span></div></div>
+          <div class="naming-row"><span class="naming-file">team-1.jpg</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">Team section</span></div></div>
+          <div class="naming-row"><span class="naming-file">pitch-deck.pdf</span><div class="naming-dest"><span class="naming-arrow">→</span><span class="naming-where">All content extracted</span></div></div>
+        </div>
+      </div>
       <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
         <span class="upload-icon">📁</span>
         <div class="upload-title">Drop files here</div>
         <div class="upload-sub">or <b onclick="event.stopPropagation();document.getElementById('file-input').click()">browse to upload</b></div>
-        <div class="upload-sub" style="margin-top:6px;font-size:11px">PNG, JPG, PDF, PPT, DOCX · max 20 MB each</div>
+        <div class="upload-sub" style="margin-top:6px;font-size:11px">PNG, JPG, SVG, MP4, MOV, PDF, PPT, DOCX · max 20 MB each</div>
       </div>
-      <input type="file" id="file-input" class="input-hidden" multiple accept=".png,.jpg,.jpeg,.gif,.svg,.pdf,.ppt,.pptx,.doc,.docx" onchange="handleFileInput(this)">
+      <input type="file" id="file-input" class="input-hidden" multiple accept=".png,.jpg,.jpeg,.gif,.svg,.webp,.mp4,.mov,.webm,.pdf,.ppt,.pptx,.doc,.docx" onchange="handleFileInput(this)">
       <div id="file-list"></div>
     </div>
 
@@ -1203,6 +1236,13 @@ function toggleLang(lang, force) {
 // ══════════════════════════════════════════
 //  FILE UPLOAD
 // ══════════════════════════════════════════
+function toggleNamingGuide() {
+  const guide = document.getElementById('naming-guide');
+  const btn   = document.getElementById('naming-guide-btn');
+  const open  = guide.style.display === 'none';
+  guide.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '📂 How to name your files for best results ▴' : '📂 How to name your files for best results ▾';
+}
 function handleFileInput(input) {
   Array.from(input.files).forEach(addFile);
   input.value = '';
@@ -1210,21 +1250,159 @@ function handleFileInput(input) {
 function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
 function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('drag-over'); }
 function handleDrop(e) { e.preventDefault(); document.getElementById('upload-zone').classList.remove('drag-over'); Array.from(e.dataTransfer.files).forEach(addFile); }
+
+function inferAsset(name) {
+  const n    = name.toLowerCase();
+  const base = n.replace(/\.[^.]+$/, '').replace(/[-_\s]+/g, '');
+  const isImg = /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(name);
+  const isVid = /\.(mp4|mov|webm|ogg)$/i.test(name);
+  const isDoc = /\.(pdf|ppt|pptx|doc|docx|txt)$/i.test(name);
+  const cat   = isDoc ? 'doc' : isVid ? 'video' : isImg ? 'image' : 'other';
+  let section = null, needsRename = false;
+
+  if (isDoc) {
+    section = 'Full content extraction';
+  } else if (isVid) {
+    if (base.includes('hero') || base === 'bg' || base.includes('background') || base.includes('intro'))
+      section = 'Hero background video';
+    else { section = null; needsRename = true; }
+  } else if (isImg) {
+    if (base.includes('logo'))                                                         section = 'Nav + Footer logo';
+    else if (base.startsWith('hero') || base.endsWith('hero'))                         section = 'Hero section';
+    else if (base.includes('about') || base.includes('story') || base.includes('founder')) section = 'About section';
+    else if (base.includes('service'))                                                 section = 'Services section';
+    else if (base.includes('portfolio') || base.includes('work') || base.includes('project') || base.includes('case')) section = 'Portfolio grid';
+    else if (base.includes('team') || base.includes('staff') || base.includes('member') || base.includes('ceo') || base.includes('cto')) section = 'Team section';
+    else if (base.includes('testimonial') || base.includes('review') || base.includes('client') || base.includes('customer')) section = 'Testimonials';
+    else if (base.includes('bg') || base.includes('background') || base.includes('banner') || base.includes('cta')) section = 'Section background';
+    else if (base.includes('blog') || base.includes('post') || base.includes('article')) section = 'Blog section';
+    else { section = null; needsRename = true; }
+  }
+  return { cat, section, needsRename, isImg, isVid, isDoc };
+}
+
 function addFile(file) {
-  const icon = file.type.includes('pdf')?'📄':file.type.includes('image')?'🖼️':file.type.includes('presentation')||file.name.endsWith('.ppt')||file.name.endsWith('.pptx')?'📊':'📎';
-  state.uploadedFiles.push({ name: file.name, size: file.size, icon });
+  const info  = inferAsset(file.name);
+  const icon  = info.isDoc ? '📄' : info.isVid ? '🎬' : info.isImg ? '🖼️' : '📎';
+  const entry = { name: file.name, size: file.size, icon, ...info, thumb: null };
+  if (info.isImg) {
+    const reader = new FileReader();
+    const idx = state.uploadedFiles.length;
+    reader.onload = e => { state.uploadedFiles[idx].thumb = e.target.result; renderFiles(); };
+    reader.readAsDataURL(file);
+  }
+  state.uploadedFiles.push(entry);
   renderFiles();
 }
+
 function renderFiles() {
   const list = document.getElementById('file-list');
-  list.innerHTML = state.uploadedFiles.map((f,i) => `
-    <div class="file-chip">
-      <span class="file-chip-icon">${f.icon}</span>
-      <span class="file-chip-name">${f.name}</span>
+  list.innerHTML = state.uploadedFiles.map((f, i) => {
+    const cls  = `file-chip${f.isImg?' is-image':f.isVid?' is-video':f.isDoc?' is-doc':''}${f.needsRename?' needs-rename':''}`;
+    const media = f.thumb
+      ? `<img class="file-chip-thumb" src="${f.thumb}" alt="">`
+      : `<span class="file-chip-icon">${f.icon}</span>`;
+    const badge = f.section
+      ? `<span class="file-chip-section">→ ${f.section}</span>`
+      : f.needsRename
+        ? `<span class="file-chip-warn">⚠️ Rename for auto-placement</span>`
+        : '';
+    return `<div class="${cls}">
+      ${media}
+      <div class="file-chip-body">
+        <div class="file-chip-name">${f.name}</div>
+        ${badge}
+      </div>
       <span class="file-chip-remove" onclick="removeFile(${i})">✕</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
-function removeFile(i) { state.uploadedFiles.splice(i,1); renderFiles(); }
+
+function removeFile(i) { state.uploadedFiles.splice(i, 1); renderFiles(); }
+
+// Build the asset instructions block injected into every prompt mode
+function _buildAssetBlock(mode) {
+  const files = state.uploadedFiles;
+  if (!files.length) return '';
+
+  const docs   = files.filter(f => f.isDoc);
+  const images = files.filter(f => f.isImg);
+  const videos = files.filter(f => f.isVid);
+  let block = '';
+
+  // ── DOCUMENTS ──────────────────────────────
+  if (docs.length) {
+    if (mode === 'full') {
+      block += `
+
+## ⚠️ CRITICAL — READ ALL ATTACHED DOCUMENTS IN FULL
+The following documents are attached. Read every single page before writing any code.
+Attached: ${docs.map(d => d.name).join(', ')}
+
+Extract and use ALL of the following — nothing may be omitted or vaguely paraphrased:
+- Company name, mission, vision, tagline, slogans, straplines
+- Every service / product: full description, features, pricing tiers
+- Team members: names, roles, bios, any referenced photos
+- Client testimonials, case studies, results, metrics, statistics
+- Awards, press mentions, partnerships, certifications, accolades
+- Brand values, personality traits, tone of voice guidelines
+- Existing colour palette, fonts, visual style direction
+- Contact info, social links, physical addresses
+- Any CTA copy, key marketing messages, or campaign language
+
+Every extracted fact MUST appear somewhere in the website.
+Use the company's exact language — the site should read as if written by the brand, not generated.`;
+    } else if (mode === 'balanced') {
+      block += `
+
+## Documents — READ EVERY PAGE, ZERO OMISSIONS
+${docs.map(d => `- ${d.name}`).join('\n')}
+Extract ALL: services, team, testimonials, stats, pricing, brand voice, CTAs, contact info.
+Use exact company language. Every fact must appear in the website — nothing paraphrased away.`;
+    } else {
+      block += `\nDOCS (read every page, use 100%): ${docs.map(d => d.name).join(', ')}`;
+    }
+  }
+
+  // ── IMAGES ─────────────────────────────────
+  if (images.length) {
+    if (mode === 'compact') {
+      block += `\nImages (src="filename" verbatim): ${images.map(img => `${img.name}→${img.section || 'best-fit section'}`).join(', ')}`;
+    } else {
+      const mapped   = images.filter(i => i.section);
+      const unmapped = images.filter(i => !i.section);
+      block += `\n\n## Images — Embed Exactly As Listed (use src="filename" verbatim, do not rename)\n`;
+      mapped.forEach(img => {
+        let line;
+        if (img.section === 'Nav + Footer logo')
+          line = `<img src="${img.name}" alt="${state.companyName || 'Logo'}"> — place in <nav> AND <footer>`;
+        else if (img.section === 'Hero section')
+          line = `background-image: url('${img.name}') or <img src="${img.name}"> — hero section`;
+        else
+          line = `<img src="${img.name}"> — ${img.section}`;
+        block += `- **${img.name}**: ${line}\n`;
+      });
+      if (unmapped.length) {
+        block += `- **Unspecified** (${unmapped.map(i => i.name).join(', ')}): analyse image content and place in the most relevant section\n`;
+      }
+    }
+  }
+
+  // ── VIDEOS ─────────────────────────────────
+  if (videos.length) {
+    if (mode === 'compact') {
+      block += `\nVideos: ${videos.map(v => `${v.name}→${v.section || 'embed in relevant section'}`).join(', ')}`;
+    } else {
+      block += `\n\n## Videos — Embed Exactly\n`;
+      videos.forEach(vid => {
+        const where = vid.section || 'most relevant section';
+        block += `- **${vid.name}**: \`<video autoplay muted loop playsinline src="${vid.name}">\` — ${where}\n`;
+      });
+    }
+  }
+
+  return block;
+}
 
 // ══════════════════════════════════════════
 //  NAVIGATION
@@ -1411,7 +1589,6 @@ function _extras() {
   const lines = [];
   if (state.isDynamic) lines.push('CMS/database required');
   if (state.isMultilingual) lines.push(`Multilingual: ${state.selectedLanguages.join(', ')}`);
-  if (state.uploadedFiles.length) lines.push(`Assets: ${state.uploadedFiles.map(f=>f.name).join(', ')}`);
   if (state.additionalNotes) lines.push(`Notes: ${state.additionalNotes}`);
   return lines;
 }
@@ -1461,8 +1638,7 @@ function buildPromptFull() {
     ? `## One-Page Sections (in order)\n${state.selectedSections.map((s,i)=>`${i+1}. ${SECTIONS.find(x=>x.id===s)?.name||s}`).join('\n')}\n\nFull-width sections, smooth-scroll, 80–120px padding each.`
     : `## Pages (${state.pageCount||state.selectedPages.length} total)\n${state.selectedPages.map(p=>{const pg=PAGES.find(x=>x.id===p);const e=p==='products'?'\n   + Single Product, Cart, Checkout (payment placeholder)':'';return `- ${pg?.name||p}${e}`;}).join('\n')}\nSticky nav + footer with sitemap/social/contact.\n${state.isDynamic?'CMS required — headless (Contentful/Sanity/Supabase) for products, blog, team.':''}\n${state.isMultilingual?`Multilingual: ${state.selectedLanguages.join(', ')} — i18n routing, flag switcher.`:''}`;
 
-  const files = state.uploadedFiles.length
-    ? `\n## Brand Assets Provided\n${state.uploadedFiles.map(f=>`- ${f.icon} ${f.name}`).join('\n')}\nExtract: colours, logo proportions, typography, imagery style, and tone.`:'';
+  const files = _buildAssetBlock('full');
 
   return `# Website Brief — ${state.companyName||'Client'}
 
@@ -1510,7 +1686,7 @@ function buildPromptBalanced() {
   const extras = _extras();
   const seoMap = { full:'Full — GA4, GSC, sitemap, robots.txt, llms.txt, meta/OG/Twitter, JSON-LD schema, alt text, CWV, keywords', half:'Half — meta/OG tags, JSON-LD schema, alt text, H1–H3 structure', none:'None — clean semantic HTML only' };
 
-  return `# ${state.companyName||'Website'} — Build Brief
+  return (`# ${state.companyName||'Website'} — Build Brief
 
 **Type:** ${isOne?'Single-page':'Multi-page'} · **Purpose:** ${state.purpose||''} · **Industry:** ${state.industry||''}
 **Brand:** ${state.companyName||''} | **Tagline:** "${state.tagline||''}" | **Tone:** ${state.tone||'professional'}
@@ -1528,7 +1704,7 @@ ${_pages()}
 
 **SEO:** ${seoMap[state.seoLevel]||'none'}
 **Tech:** Mobile-first (375–1440px+) · Lighthouse 90+ · WCAG 2.1 AA · Semantic HTML5
-${extras.length?extras.join(' · '):''}`.trim();
+${extras.length?extras.join(' · '):''}` + _buildAssetBlock('balanced')).trim();
 }
 
 // ── COMPACT PROMPT (~150 tokens) ───────────
@@ -1550,7 +1726,8 @@ function buildPromptCompact() {
     ...extras
   ].filter(Boolean);
 
-  return lines.join('\n');
+  const assetBlock = _buildAssetBlock('compact');
+  return lines.join('\n') + (assetBlock ? '\n' + assetBlock : '');
 }
 
 function buildPrompt() {
